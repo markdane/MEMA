@@ -4,15 +4,13 @@
 \alias{medianNorm}
 \title{Median normalize a vector}
 \usage{
-medianNorm(DT, value)
+medianNorm(x)
 }
 \arguments{
-\item{DT}{A datatable with a column \code{value}}
-
-\item{value}{The name of the column in DT to be normalized}
+\item{x}{numeric vector}
 }
 \value{
-A numeric vector that is \code{DT[[value]]} dvided by its median
+A numeric vector that is \code{x} divided by its median
 }
 \description{
 Median normalize a vector

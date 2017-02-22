@@ -1,15 +1,5 @@
 #QA Functions for MEMAs
 
-#' Randomize a vector of values
-#' @param x a numeric vector
-#'@return x with the values randomly ordered
-#'@export
-randomizePositions <- function(x){
-  tmp <- x[sample(1:length(x),size = length(x), replace=FALSE)]
-  return(tmp)
-}
-
-
 #' Calculate Coefficient of Variation (CV)
 #'
 #'Calculates the CV of a numeric vector as the standard deviation over the mean. All NA values are removed from the input vector.
@@ -19,12 +9,6 @@ randomizePositions <- function(x){
 #'  @export
 CV <- function(x){
   sd(x, na.rm=TRUE)/mean(x, na.rm=TRUE)
-}
-
-# Empty function
-#
-cleanDT <- function (DT) {
-  return(DT)
 }
 
 #' Calculate a QA score for MEMAs
@@ -42,12 +26,3 @@ calcQAScore <- function(DT, threshold, maxNrSpot=700, value){
   return (QAScore)
 }
 
-#'
-#' @export
-RZScore <- function(x){
-  xMedian <- median(x, na.rm=TRUE)
-  xMad <-mad(x, na.rm=TRUE)
-  if(xMad == 0){ zscores <- NA
-  } else zscores <- (x-xMedian)/xMad
-  return(zscores)
-}

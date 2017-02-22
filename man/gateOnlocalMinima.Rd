@@ -4,7 +4,12 @@
 \alias{gateOnlocalMinima}
 \title{Gate a vector on a local minima}
 \usage{
-gateOnlocalMinima(x, ...)
+gateOnlocalMinima(x, probs = c(0.2, 0.8), ...)
+}
+\arguments{
+\item{x}{numeric vector}
+
+\item{probs}{interval limits on where to search for the minima}
 }
 \description{
 Gate a vector on a local minima

@@ -1,6 +1,5 @@
 #Functions to support MEMAs printed in 8 well plates
 
-
 #' Rotate the metadata 180 degrees in Array space
 #'
 #'@param DT A data.table of metadata with Spot, ArrayRow and ArrayColumn columns.

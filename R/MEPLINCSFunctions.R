@@ -211,21 +211,21 @@ filterl4RUV <- function(dt,lowQALigands){
   fvDT <- l4QA[,fv,with = FALSE]
   return(fvDT)
 }
-
-#' @export
-#' 
-plotSCCRobustZScores <- function(dt, thresh = 3){
-  #Filter our FBS MEPs then plot spot cell count robust Z scores
-  #browser()
-  dt <- dt[!grepl("FBS",dt$MEP)]
-  p <- ggplot(dt, aes(x=Spot_PA_SpotCellCountLog2RUVLoess_RobustZ))+geom_histogram(binwidth = .1)+
-    geom_vline(xintercept = c(-thresh,thresh), colour = "blue")+
-    ggtitle(paste("\n\n","MEP Normalized Spot Cell Count Robust Z Scores Distribution"))+
-    ylab("Count")+xlab("Normalized Spot Cell Count Robust Z Scores")+
-    theme(strip.text = element_text(size = 5))
-  suppressWarnings(print(p))
-  
-}
+# 
+# #' @export
+# #' 
+# plotSCCRobustZScores <- function(dt, thresh = 3){
+#   #Filter our FBS MEPs then plot spot cell count robust Z scores
+#   #browser()
+#   dt <- dt[!grepl("FBS",dt$MEP)]
+#   p <- ggplot(dt, aes(x=Spot_PA_SpotCellCountLog2RUVLoess_RobustZ))+geom_histogram(binwidth = .1)+
+#     geom_vline(xintercept = c(-thresh,thresh), colour = "blue")+
+#     ggtitle(paste("\n\n","MEP Normalized Spot Cell Count Robust Z Scores Distribution"))+
+#     ylab("Count")+xlab("Normalized Spot Cell Count Robust Z Scores")+
+#     theme(strip.text = element_text(size = 5))
+#   suppressWarnings(print(p))
+#   
+# }
 
 
 #' @export
@@ -417,7 +417,7 @@ createl4KeepRaw <- function (l3)
 }
 
 #' Add an ECMp and Ligand RLE value for each signal in a dataset
-#' @export
+#'
 #' 
 addRLEs <- function(dt){
   #Reduce size of dt for debug
@@ -599,7 +599,7 @@ preprocessCommonSignals1x <- function(x, k=128L, verbose=FALSE){
 #   return(l3nn)
 # }
 
-#' @export
+#'
 #' 
 numericMedianUniqueMetadata<-function(x){
   if(is.numeric(x)){
