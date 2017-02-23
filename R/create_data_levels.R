@@ -1,7 +1,11 @@
 # Helper function to create level 3 and 4 data
+#` Calculate standard error of the mean
+#' 
+#' Omit na values if present
+#' @param x a numeric vector
+#' @return the standard error of the mean for x as a numeric value
 #'@export
 se <- function(x) sqrt(var(x,na.rm=TRUE)/length(na.omit(x)))
-
 #' Summarize cell level data to the spot level
 #' 
 #' Median summarize the cell level normalized values and the most biologically 
