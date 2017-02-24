@@ -2,7 +2,7 @@
 % Please edit documentation in R/create_data_levels.R
 \name{se}
 \alias{se}
-\title{Calculate standard error of the mean}
+\title{Omit na values if present}
 \usage{
 se(x)
 }
@@ -10,9 +10,8 @@ se(x)
 \item{x}{a numeric vector}
 }
 \value{
-the standard erro of the mean for x as a numeric value
+the standard error of the mean for x as a numeric value
 }
 \description{
 Omit na values if present
 }
-
