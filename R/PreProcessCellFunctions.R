@@ -110,6 +110,9 @@ mergeSpot96WellMetadata <- function(spotMetadata,wellMetadata){
   metadata <- merge(smdPlate,wellMetadata,by="Well")
 }
 
+#' Get metadata from either An! or !An! files
+#' 
+#' @export
 getMetadata <- function(barcode, path, useAnnotMetadata=TRUE){
   #Use metadata from an2omero files
   if(useAnnotMetadata){
