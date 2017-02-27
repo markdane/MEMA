@@ -431,10 +431,10 @@ writeCellLevel <- function(dt,path,barcode, verbose=FALSE){
   if(verbose) cat("Writing",barcode,"level 1 full file to disk\n")
   writeTime<-Sys.time()
   fwrite(dt, paste0(path,barcode, "/Analysis/", barcode,"_","Level1.tsv"), sep = "\t", quote=FALSE)
-  cat("Write time:", Sys.time()-writeTime,"\n")
+  if(verbose)cat("Write time:", Sys.time()-writeTime,"\n")
   if(verbose) cat("Writing",barcode,"level 1 subset file to disk\n")
   writeTime<-Sys.time()
   set.seed(42)
   fwrite(dt[sample(x=1:nrow(dt),size = .1*nrow(dt),replace=FALSE),], paste0(barcodePath, "/Analysis/", barcode,"_","Level1Subset.tsv"), sep = "\t", quote=FALSE)
-  cat("Write time:", Sys.time()-writeTime,"\n")
+  if(verbose)cat("Write time:", Sys.time()-writeTime,"\n")
 }  
