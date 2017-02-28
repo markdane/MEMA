@@ -317,3 +317,21 @@ cleanColumnNames<-function(dt){
   data.table::setnames(dt,gsub("[.]"," ",make.names(colnames(dt))))
   return(dt)
 }
+
+#' Get barcodes from the Synapse Plate Tracker files
+#' @param studyName Character string of the study name
+#' @return Barcodes of the plates in the study
+#' @export
+getBarcodes <- function(studyName){
+  library(synapseClient)
+  
+  synapseLogin()
+  barcodes <- synGet("syn8313413") %>%
+    getFileLocation() %>%
+    fread(check.names = TRUE) %>%
+    filter(Study.Name== studyName) %>%
+    select(Plate.IDs) %>%
+    str_split(",") %>%
+    unlist()
+  return(barcodes)
+}

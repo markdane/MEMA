@@ -6,119 +6,107 @@
 #' @return the standard error of the mean for x as a numeric value
 #'@export
 se <- function(x) sqrt(var(x,na.rm=TRUE)/length(na.omit(x)))
+
 #' Summarize cell level data to the spot level
 #' 
 #' Median summarize the cell level normalized values and the most biologically 
 #' interpretable raw data at each spot, calculate the standard errors and add
 #' SE columns for all median summarized data
-#' @param cDT The datatable of cell level data to be summarized
-#' @param lthresh The threshold used in the loess model to define low cell count
-#'  regions
+#' @param dt The datatable of cell level data to be summarized
 #'  @return A datatable of spot-level, median summarized data with standard error values and 
 #'  metadata
 #' @export
-summarizeToSpot <- function(cDT, lthresh = lthresh, seNames=NULL){
+summarizeToSpot <- function(dt, seNames=NULL){
   #Summarize cell data to medians of the spot parameters
-  parameterNames<-grep(pattern="(Children|_CP_|_PA_)",x=names(cDT),value=TRUE)
+  parameterNames<-grep(pattern="(Children|_CP_|_PA_)",x=names(dt),value=TRUE)
   
   #Remove spot-normalized or summarized parameters
   parameterNames <- grep("SpotNorm|Wedge|Sparse|OuterCell|Center|^Nuclei_PA_Gated_EduPositive$",parameterNames,value=TRUE,invert=TRUE)
   
-  slDT<-cDT[,lapply(.SD, numericMedian), by="Barcode,Well,Spot", .SDcols=parameterNames]
+  slDT<-dt[,lapply(.SD, numericMedian), by="Barcode,Well,Spot", .SDcols=parameterNames]
   #Use seNames to select the parameters that get SE values
   if(!is.null(seNames)){
     seNamesPattern<-paste(seNames,collapse="|")
     seNames <- grep(seNamesPattern,parameterNames,value=TRUE)
-    slDTse <- cDT[,lapply(.SD,se), by="Barcode,Well,Spot", .SDcols=seNames]
+    slDTse <- dt[,lapply(.SD,se), by="Barcode,Well,Spot", .SDcols=seNames]
   } else{
-    slDTse <- cDT[,lapply(.SD,se), by="Barcode,Well,Spot"]
+    slDTse <- dt[,lapply(.SD,se), by="Barcode,Well,Spot"]
   }
   
   #Add _SE to the standard error column names
   setnames(slDTse, grep("Barcode|^Well$|^Spot$",colnames(slDTse), value = TRUE, invert = TRUE), paste0(grep("Barcode|^Well$|^Spot$",colnames(slDTse), value = TRUE, invert = TRUE),"_SE"))
   
   #Merge back in the spot and well metadata
-  metadataNames <- grep("(Row|Column|PrintOrder|Block|^ID$|Array|CellLine|Ligand|Drug|Endpoint|ECMp|MEP|Well_Ligand|ECM|ImageID|Barcode|^Well$|^PrintSpot$|^Spot$|Pin|Lx)", x=colnames(cDT), value=TRUE)
-  setkey(cDT,Barcode, Well,Spot)
-  mDT <- cDT[,metadataNames,keyby="Barcode,Well,Spot", with=FALSE]
+  metadataNames <- grep("(Row|Column|PrintOrder|Block|^ID$|Array|CellLine|Ligand|Drug|Endpoint|ECMp|MEP|Well_Ligand|ECM|ImageID|Barcode|^Well$|^PrintSpot$|^Spot$|Pin|Lx)", x=colnames(dt), value=TRUE)
+  setkey(dt,Barcode, Well,Spot)
+  mDT <- dt[,metadataNames,keyby="Barcode,Well,Spot", with=FALSE]
   slDT <- mDT[slDT, mult="first"]
   #Merge in the standard err values
   setkey(slDT, Barcode, Well, Spot)
   setkey(slDTse, Barcode, Well, Spot)
   slDT <- slDT[slDTse]
-  #Add a count of replicates
-  slDT <- slDT[,Spot_PA_ReplicateCount := .N,by="Ligand,ECMp"]
-  
-  #Add the loess model of the SpotCellCount on a per well basis
-  slDT <- slDT[,Spot_PA_LoessSCC := loessModel(.SD, value="Spot_PA_SpotCellCount", span=.5), by="Barcode,Well"]
-  
-  #Add well level QA Scores to spot level data
-  slDT <- slDT[,QAScore := calcQAScore(.SD, threshold=lthresh, maxNrSpot = max(cDT$ArrayRow)*max(cDT$ArrayColumn),value="Spot_PA_LoessSCC"),by="Barcode,Well"]
   return(slDT)
 }
 
+#' QA the spot level data
+#' 
+#' Median summarize the cell level normalized values and the most biologically 
+#' interpretable raw data at each spot, calculate the standard errors and add
+#' SE columns for all median summarized data
+#' @param dt Datatable of spot level data
+#' @param lthresh The threshold used in the loess model to define low cell count
+#'  regions
+#'  @return A datatable of spot-level, median summarized data with standard error values and 
+#'  metadata
+#' @export
+QASpotData <- function(dt, lthresh = lthresh){
+  #Add a count of replicates
+  dt <- dt[,Spot_PA_ReplicateCount := .N,by="Ligand,ECMp"]
+  #Add the loess model of the SpotCellCount on a per well basis
+  dt <- dt[,Spot_PA_LoessSCC := loessModel(.SD, value="Spot_PA_SpotCellCount", span=.5), by="Barcode,Well"]
+  #Add well level QA Scores to spot level data
+  dt <- dt[,QAScore := calcQAScore(.SD, threshold=lthresh, maxNrSpot = max(dt$ArrayRow)*max(dt$ArrayColumn),value="Spot_PA_LoessSCC"),by="Barcode,Well"]
+  return(dt)
+}
 
-# #' Summarize cell level data to the spot level
-# #' 
-# #' Median summarize the cell level normalized values and the most biologically 
-# #' interpretable raw data at each spot, calculate the standard errors and add
-# #' SE columns for all median summarized data
-# #' @param cDT The datatable of cell level data to be summarized
-# #' @param lthresh The threshold used in the loess model to define low cell count
-# #'  regions
-# #'  @return A datatable of spot-level, median summarized data with standard error values and 
-# #'  metadata
-# #' @export
-# createl3 <- function(cDT, lthresh = lthresh, seNames=NULL){
-#   #Summarize cell data to medians of the spot parameters
-#   parameterNames<-grep(pattern="(Children|_CP_|_PA_)",x=names(cDT),value=TRUE)
-#   
-#   #Remove spot-normalized or summarized parameters
-#   parameterNames <- grep("SpotNorm|Wedge|Sparse|OuterCell|Center|^Nuclei_PA_Gated_EduPositive$",parameterNames,value=TRUE,invert=TRUE)
-#   
-#   slDT<-cDT[,lapply(.SD, numericMedian), by="Barcode,Well,Spot", .SDcols=parameterNames]
-#   #Use seNames to select the parameters that get SE values
-#   if(!is.null(seNames)){
-#     seNamesPattern<-paste(seNames,collapse="|")
-#     seNames <- grep(seNamesPattern,parameterNames,value=TRUE)
-#     slDTse <- cDT[,lapply(.SD,se), by="Barcode,Well,Spot", .SDcols=seNames]
-#   } else{
-#     slDTse <- cDT[,lapply(.SD,se), by="Barcode,Well,Spot"]
-#   }
-#   
-#   #Add _SE to the standard error column names
-#   setnames(slDTse, grep("Barcode|^Well$|^Spot$",colnames(slDTse), value = TRUE, invert = TRUE), paste0(grep("Barcode|^Well$|^Spot$",colnames(slDTse), value = TRUE, invert = TRUE),"_SE"))
-#   
-#   #Merge back in the spot and well metadata
-#   metadataNames <- grep("(Row|Column|PrintOrder|Block|^ID$|Array|CellLine|Ligand|Endpoint|ECMp|MEP|Well_Ligand|ECM|ImageID|Barcode|^Well$|^PrintSpot$|^Spot$|Pin|Lx)", x=colnames(cDT), value=TRUE)
-#   setkey(cDT,Barcode, Well,Spot)
-#   mDT <- cDT[,metadataNames,keyby="Barcode,Well,Spot", with=FALSE]
-#   slDT <- mDT[slDT, mult="first"]
-#   #Merge in the standard err values
-#   setkey(slDTse, Barcode, Well, Spot)
-#   slDT <- slDTse[slDT]
-#   #Add a count of replicates
-#   slDT <- slDT[,Spot_PA_ReplicateCount := .N,by="Ligand,ECMp"]
-#   
-#   #Add the loess model of the SpotCellCount on a per well basis
-#   slDT <- slDT[,Spot_PA_LoessSCC := loessModel(.SD, value="Spot_PA_SpotCellCount", span=.5), by="Barcode,Well"]
-#   
-#   #Add well level QA Scores to spot level data
-#   slDT <- slDT[,QAScore := calcQAScore(.SD, threshold=lthresh, maxNrSpot = max(cDT$ArrayRow)*max(cDT$ArrayColumn),value="Spot_PA_LoessSCC"),by="Barcode,Well"]
-#   return(slDT)
-# }
-# 
-# numericMedianUniqueMetadata<-function(x){
-#   if(is.numeric(x)){
-#     as.numeric(median(x))
-#   } else {
-#     if(!length(unique(x))==1){
-#       return(NA)
-#     } else{
-#       unique(x)
-#     }
-#   }
-# }
+#' Add the porportions of gated cells in the spot populations
+#' @param dt A datatable 
+#' @return nothing is returned, the proportions are added to the input datatable
+#' @export
+addSpotProportions <- function(dt){
+  #Calculate DNA proportions based on cell cycle state
+  dt <- dt[,Nuclei_PA_Cycle_DNA2NProportion := calc2NProportion(Nuclei_PA_Cycle_State),by="Barcode,Well,Spot"]
+  dt <- dt[,Nuclei_PA_Cycle_DNA4NProportion := 1-Nuclei_PA_Cycle_DNA2NProportion]
+  
+  #Create proportions and logits of mutlivariate gates
+  if ("Cytoplasm_PA_Gated_KRTClass" %in% colnames(dt)){
+    #Determine the class of each cell based on KRT5 and KRT19 class
+    #0 double negative
+    #1 KRT5+, KRT19-
+    #2 KRT5-, KRT19+
+    #3 KRT5+, KRT19+
+    #Calculate gating proportions for EdU and KRT19
+    dt <- dt[,Cytoplasm_PA_Gated_KRT5RT19NegativeProportion := sum(Cytoplasm_PA_Gated_KRTClass==0)/length(ObjectNumber),by="Barcode,Well,Spot"]
+    dt <- dt[,Cytoplasm_PA_Gated_KRT5NegativeKRT19PositiveProportion := sum(Cytoplasm_PA_Gated_KRTClass==2)/length(ObjectNumber),by="Barcode,Well,Spot"]
+    dt <- dt[,Cells_PA_Gated_KRT5PositiveKRT19NegativeProportion := sum(Cytoplasm_PA_Gated_KRTClass==1)/length(ObjectNumber),by="Barcode,Well,Spot"]
+    dt <- dt[,Cells_PA_Gated_KRT5PositivedKRT19PositiveProportion := sum(Cytoplasm_PA_Gated_KRTClass==3)/length(ObjectNumber),by="Barcode,Well,Spot"]
+  }
+  
+  if ("Cells_PA_Gated_EdUKRT5Class" %in% colnames(dt)){
+    #Determine the class of each cell based on KRT5 and EdU class
+    #0 double negative
+    #1 KRT5+, EdU-
+    #2 KRT5-, EdU+
+    #3 KRT5+, EdU+
+    #Calculate gating proportions for EdU and KRT5
+    dt <- dt[,Cells_PA_Gated_EdUKRT5NegativeProportion := sum(Cells_PA_Gated_EdUKRT5Class==0)/length(ObjectNumber),by="Barcode,Well,Spot"]
+    dt <- dt[,Cells_PA_Gated_EdUPositiveKRT5NegativeProportion := sum(Cells_PA_Gated_EdUKRT5Class==2)/length(ObjectNumber),by="Barcode,Well,Spot"]
+    dt <- dt[,Cells_PA_Gated_EdUNegativeKRT5PositiveProportion := sum(Cells_PA_Gated_EdUKRT5Class==1)/length(ObjectNumber),by="Barcode,Well,Spot"]
+    dt <- dt[,Cells_PA_Gated_EdUKRT5PositiveProportion := sum(Cells_PA_Gated_EdUKRT5Class==3)/length(ObjectNumber),by="Barcode,Well,Spot"]
+  }
+}
+
+
 
 # #' @export
 # summarizeFBS <- function(dt){
