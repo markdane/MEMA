@@ -95,11 +95,11 @@ processan2omero <- function (fileNames) {
     #Rename to preprocessing pipeline variable names
     setnames(dt,"OSpot","Spot")
     setnames(dt,"PlateID","Barcode")
-    setnames(dt,"395nm","EndpointDAPI")
-    setnames(dt,"488nm","Endpoint488")
-    setnames(dt,"555nm","Endpoint555")
-    setnames(dt,"640nm","Endpoint647")
-    setnames(dt,"750nm","Endpoint750")
+    dt$EndpointDAPI <- dt[["395nm"]]
+    dt$Endpoint488 <- dt[["488nm"]]
+    dt$Endpoint555 <- dt[["555nm"]]
+    dt$Endpoint647 <- dt[["640nm"]]
+    dt$Endpoint750 <- dt[["750nm"]]
     #Shorten and combine Annot names
     dt$CellLine <- gsub("_.*","",dt$CellLine)
     dt$ECM1 <- compressHA(dt$ECM1)
