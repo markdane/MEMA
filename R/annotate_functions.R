@@ -91,7 +91,11 @@ processan2omero <- function (fileNames) {
   rbindlist(lapply(fileNames, function(fn){
     #Process each file separately
     dt <- fread(fn,header = TRUE)
-    
+    #Assign WellIndex values
+    if(!length(unique(dt$Well)) %in% c(8,96)) stop("Only 8 and 96 well plates are supported for An! metadata")
+    setkey(dt, Well)
+    wi <- data.table(Well = unique(dt$Well), WellIndex = 1:length(unique(dt$Well)))
+    dt <- merge(dt,wi)
     #Rename to preprocessing pipeline variable names
     setnames(dt,"OSpot","Spot")
     setnames(dt,"PlateID","Barcode")
@@ -130,3 +134,20 @@ processan2omero <- function (fileNames) {
   
 }
 
+#' Read in and merge the Omero URLs
+#' 
+#' Adds Omero image IDs based on the WelIndex values
+#' 
+#' @param barcodePath The path to the file named barcode_imageIDs.tsv
+#' @return a datatable with WellIndex, ArrayRow, ArrayColumn and ImageID columns
+#' @export
+getOmeroIDs <- function(barcodePath){
+  barcode <- gsub(".*/","",barcodePath)
+  dt <- fread(paste0(barcodePath,"/Analysis/",barcode,"_imageIDs.tsv"))[,list(WellName,Row,Column,ImageID)]
+  #Extract well index and convert to alphanumeric label
+  dt[,WellIndex := as.integer(gsub(".*_Well","",WellName))]
+  setnames(dt,"Row","ArrayRow")
+  setnames(dt,"Column","ArrayColumn")
+  dt[,WellName := NULL]
+  return(dt)
+}

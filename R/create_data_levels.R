@@ -37,7 +37,7 @@ summarizeToSpot <- function(dt, seNames=NULL){
   setnames(slDTse, grep("Barcode|^Well$|^Spot$",colnames(slDTse), value = TRUE, invert = TRUE), paste0(grep("Barcode|^Well$|^Spot$",colnames(slDTse), value = TRUE, invert = TRUE),"_SE"))
   
   #Merge back in the spot and well metadata
-  metadataNames <- grep("(Row|Column|PrintOrder|Block|^ID$|Array|CellLine|Ligand|Drug|Endpoint|ECMp|MEP|Well_Ligand|ECM|ImageID|Barcode|^Well$|^PrintSpot$|^Spot$|Pin|Lx|[[:digit:]]{3}nm$|StainingSet)", x=colnames(dt), value=TRUE)
+  metadataNames <- grep("(Row|Column|PrintOrder|Block|^ID$|Array|CellLine|Ligand|Drug|Endpoint|ECMp|MEP|Well_Ligand|ECM|ImageID|Barcode|^Well$|^WellIndex$|^PrintSpot$|^Spot$|Pin|Lx|[[:digit:]]{3}nm$|StainingSet)", x=colnames(dt), value=TRUE)
   setkey(dt,Barcode, Well,Spot)
   mDT <- dt[,metadataNames,keyby="Barcode,Well,Spot", with=FALSE]
   slDT <- mDT[slDT, mult="first"]
@@ -75,9 +75,11 @@ QASpotData <- function(dt, lthresh = lthresh){
 #' @export
 addSpotProportions <- function(dt){
   #Calculate DNA proportions based on cell cycle state
-  dt <- dt[,Nuclei_PA_Cycle_DNA2NProportion := calc2NProportion(Nuclei_PA_Cycle_State),by="Barcode,Well,Spot"]
-  dt <- dt[,Nuclei_PA_Cycle_DNA4NProportion := 1-Nuclei_PA_Cycle_DNA2NProportion]
-  
+  if("Nuclei_PA_Cycle_State" %in% colnames(dt)){
+    dt <- dt[,Nuclei_PA_Cycle_DNA2NProportion := calc2NProportion(Nuclei_PA_Cycle_State),by="Barcode,Well,Spot"]
+    dt <- dt[,Nuclei_PA_Cycle_DNA4NProportion := 1-Nuclei_PA_Cycle_DNA2NProportion]
+  }
+
   #Create proportions and logits of mutlivariate gates
   if ("Cytoplasm_PA_Gated_KRTClass" %in% colnames(dt)){
     #Determine the class of each cell based on KRT5 and KRT19 class
