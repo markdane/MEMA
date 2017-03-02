@@ -185,6 +185,7 @@ addSpotProportions <- function(dt){
 #'  metadata
 #' @export
 preprocessLevel4 <- function(dt, seNames=NULL){
+  library(magrittr)
   #Add a count of replicates
   dt <- dt[,Spot_PA_ReplicateCount := .N,by="Ligand,ECMp,Drug,CellLine"]
   rawSignalNames <- grep("_SE",grep("Log2|Logit|_PA_|Intensity|AreaShape",colnames(dt), value=TRUE), value=TRUE, invert=TRUE)
@@ -194,9 +195,9 @@ preprocessLevel4 <- function(dt, seNames=NULL){
   if(!is.null(seNames)){
     seNamesPattern<-paste(seNames,collapse="|")
     seSignalNames <- grep(seNamesPattern,rawSignalNames,value=TRUE)
-    l4Ses <- dt[,lapply(.SD,MEMA:::se),keyby="Ligand,ECMp,Drug,CellLine", .SDcols=seSignalNames]
+    l4Ses <- dt[,lapply(.SD,se),keyby="Ligand,ECMp,Drug,CellLine", .SDcols=seSignalNames]
   } else{
-    l4Ses <- dt[,lapply(.SD,MEMA:::se),keyby="Ligand,ECMp,Drug,CellLine"]
+    l4Ses <- dt[,lapply(.SD,se),keyby="Ligand,ECMp,Drug,CellLine"]
   }
   
   #Add _SE to the standard error column names

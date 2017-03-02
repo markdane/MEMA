@@ -335,3 +335,37 @@ getBarcodes <- function(studyName){
     unlist()
   return(barcodes)
 }
+
+#' Get the spot level data for a study
+#' 
+#' @param studyName The name of a study that contains data from one or more plates
+#' @param path The path to the directory that contains the barcode level subdirectories
+#' @return A datatable with the annotated data for all plates in the study. Any data for fiducials and 
+#' blank spots is filtered out.
+#' @export
+getSpotLevelData <- function(studyName, path){
+  slDT <- getBarcodes(studyName) %>%
+    mclapply(function(barcode, path){
+      sd <- fread(paste0(path,"/",barcode,"/Analysis/",barcode,"_SpotLevel.tsv"))
+    }, path=path, mc.cores=detectCores()) %>%
+    rbindlist()
+  slDT$BW <- paste(slDT$Barcode,slDT$Well,sep="_")
+  slDT <- slDT[!grepl("fiducial|Fiducial|gelatin|blank|air|PBS",slDT$ECMp),]
+  return(slDT)
+}
+
+#' Add in the barcodes the MEPs came from
+#' 
+#' Add a barcode column that has one or more barcodes of the data's well plates
+#' @param dt3 A spot level datatable with MEP_Drug and Barcode columns
+#' @param dt4 A MEP level datatable with a MEP_Drug column
+#' @return The input MEP level datatable with a Barcode column added
+#' @export
+addBarcodes <- function(dt3, dt4){
+  barcodesList <- lapply(unique(dt4$MEP_Drug), function(m){
+    Barcodes=paste(unique(dt3$Barcode[dt3$MEP_Drug==m]), collapse = ",")
+  })
+  bmdDT <- data.table(Barcode = unlist(barcodesList), MEP_Drug=unique(dt4$MEP_Drug))
+  dt4 <- merge(bmdDT,dt4,by="MEP_Drug")
+  return(dt4)
+}
