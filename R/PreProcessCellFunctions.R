@@ -378,7 +378,6 @@ gateCells <- function(dt){
   if ("Cytoplasm_CP_Intensity_MedianIntensity_KRT19" %in% colnames(dt)&
       "Cytoplasm_CP_Intensity_MedianIntensity_KRT5" %in% colnames(dt)){
     dt <- dt[,Cytoplasm_PA_Intensity_LineageRatio := Cytoplasm_CP_Intensity_MedianIntensity_KRT19/Cytoplasm_CP_Intensity_MedianIntensity_KRT5]
-    dt <- dt[,Cytoplasm_PA_Intensity_LineageRatioLog2 := boundedLog2(Cytoplasm_PA_Intensity_LineageRatio)]
     #Gate the KRT signals using kmeans clustering
     
     if(grepl("HMEC",unique(dt$CellLine))) {
@@ -409,7 +408,6 @@ gateCells <- function(dt){
       "Cytoplasm_CP_Intensity_MedianIntensity_KRT19" %in% colnames(dt)){
     #Calculate a lineage ratio of luminal/basal or KRT19/KRT14
     dt <- dt[,Cytoplasm_PA_Intensity_LineageRatio := Cytoplasm_CP_Intensity_MedianIntensity_KRT19/Cytoplasm_CP_Intensity_MedianIntensity_KRT14]
-    dt <- dt[,Cytoplasm_PA_Intensity_LineageRatioLog2 := boundedLog2(Cytoplasm_PA_Intensity_LineageRatio)]
   }
   if ("Cytoplasm_CP_Intensity_MedianIntensity_KRT5Log2" %in% colnames(dt)&
       "Nuclei_PA_Gated_EdUPositive" %in% colnames(dt)){
