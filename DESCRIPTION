@@ -16,7 +16,6 @@ Imports:
     mclust,
     parallel,
     dplyr,
-    tidyr,
     stringr,
     magrittr
 Depends:
