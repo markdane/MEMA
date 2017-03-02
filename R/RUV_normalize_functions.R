@@ -8,7 +8,7 @@ normRUVLoessResiduals <- function(dt, k){
   setkey(dt,CellLine,Barcode,Well,Ligand,Drug,ECMp)
   #Transform signals to be on additive scale
   #log transform all intensity and areaShape values
-  log2Names <- grep("_Center_|_Eccentricity|_Orientation",grep("Intensity|AreaShape",colnames(dt), value=TRUE, ignore.case = TRUE), value=TRUE, invert=TRUE)
+  log2Names <- grep("_Center_|_Eccentricity|_Orientation",grep("SpotCellCount|Intensity|AreaShape",colnames(dt), value=TRUE, ignore.case = TRUE), value=TRUE, invert=TRUE)
   dtLog <- dt[,lapply(.SD,boundedLog2),.SDcols=log2Names]
   setnames(dtLog,colnames(dtLog),paste0(colnames(dtLog),"Log2"))
   #logit transform proportion values
