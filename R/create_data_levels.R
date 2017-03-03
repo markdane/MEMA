@@ -5,7 +5,14 @@
 #' @param x a numeric vector
 #' @return the standard error of the mean for x as a numeric value
 #'@export
-se <- function(x) sqrt(var(x,na.rm=TRUE)/length(na.omit(x)))
+se <- function(x) {
+  if(sum(!is.na(x))>1){
+    se <- sqrt(var(x,na.rm=TRUE)/length(na.omit(x)))
+  } else {
+    se <- 0
+  }
+  return(se)
+}
 
 #' Summarize cell level data to the spot level
 #' 
