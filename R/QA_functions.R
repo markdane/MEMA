@@ -39,12 +39,15 @@ QASpotLevelData <- function(dt,lowSpotCellCountThreshold=5,
                             lowWellQAThreshold = .7){
   #Low cell count spots
   dt$QA_LowSpotCellCount <- dt$Spot_PA_SpotCellCount < lowSpotCellCountThreshold
+  dt$QA_lowSpotCellCountThreshold <- lowSpotCellCountThreshold
   #Low quality DAPI
   dt$QA_LowDAPIQuality <- FALSE
   #Flag spots below automatically loess QA threshold
   dt$QA_LowRegionCellCount <- dt$Spot_PA_LoessSCC < lowRegionCellCountThreshold
+  dt$QA_lowRegionCellCountThreshold <- lowRegionCellCountThreshold
   #Flag wells below automatically calculated QA threshold
   dt$QA_LowWellQA <- FALSE
   dt$QA_LowWellQA[dt$QAScore < lowWellQAThreshold] <- TRUE
+  dt$QA_lowWellQAThreshold <- lowWellQAThreshold
   return(dt)
 }
