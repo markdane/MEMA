@@ -6,9 +6,17 @@
 #' @export
 normRUVLoessResiduals <- function(dt, k){
   setkey(dt,CellLine,Barcode,Well,Ligand,Drug,ECMp)
-  metadataNames <- "^CellLine$|Barcode|^Well$|^Spot$|^PrintSpot$|ArrayRow|ArrayColumn|^ECMp$|^Ligand$|^Drug$"
-  signalNames <- grep(metadataNames,colnames(dt),invert=TRUE, value=TRUE)
-  
+  #Transform signals to be on additive scale
+  #log transform all intensity and areaShape values
+  log2Names <- grep("_Center_|_Eccentricity|_Orientation",grep("SpotCellCount|Intensity|AreaShape",colnames(dt), value=TRUE, ignore.case = TRUE), value=TRUE, invert=TRUE)
+  dtLog <- dt[,lapply(.SD,boundedLog2),.SDcols=log2Names]
+  setnames(dtLog,colnames(dtLog),paste0(colnames(dtLog),"Log2"))
+  #logit transform proportion values
+  logitNames <- grep("_Center_|_Orientation",grep("_Eccentricity|Proportion",colnames(dt), value=TRUE, ignore.case = TRUE), value=TRUE, invert=TRUE)
+  dtLogit <- dt[,lapply(.SD,boundedLogit),.SDcols=logitNames]
+  setnames(dtLogit,colnames(dtLogit),paste0(colnames(dtLogit),"Logit"))
+  signalNames <- c(colnames(dtLog),colnames(dtLogit))
+  dt <-  cbind(dt[,grep("^CellLine$|Barcode|^Well$|^Spot$|^PrintSpot$|ArrayRow|ArrayColumn|^ECMp$|^Ligand$|^Drug$",colnames(dt),value=TRUE),with=FALSE],dtLog,dtLogit)
   #Add residuals from subtracting the biological medians from each value
   residuals <- dt[,lapply(.SD,calcResidual), by="CellLine,Barcode,Well,Ligand,Drug,ECMp", .SDcols=signalNames]
   #Add within array location metadata
@@ -66,6 +74,19 @@ normRUVLoessResiduals <- function(dt, k){
   
   #Combine the normalized signals and metadata
   signalDT <- Reduce(merge,RUVLoessList)
+  
+  #Backtransform from log2 and logit values
+  #log transform all intensity and areaShape values
+  log2Names <- grep("Log2",colnames(signalDT), value=TRUE)
+  btLog2 <- function(x) x^2
+  dtLog <- signalDT[,lapply(.SD,btLog2),.SDcols=log2Names]
+  logitNames <- grep("Logit",colnames(signalDT), value=TRUE)
+  dtLogit <- signalDT[,lapply(.SD,plogis),.SDcols=logitNames]
+  signalDT <- cbind(signalDT[,.(BW,PrintSpot)],dtLog,dtLogit)
+  #Label as Norm instead of RUVLoess
+  setnames(signalDT,
+           grep("Log2RUVLoess|LogitRUVLoess",colnames(signalDT),value=TRUE),
+           gsub("Log2RUVLoess|LogitRUVLoess","Norm", grep("Log2RUVLoess|LogitRUVLoess",colnames(signalDT),value=TRUE)))
   
   return(signalDT)
 }
@@ -128,9 +149,17 @@ signalResidualMatrix <- function(dt){
   return(srm)
 }
 
-#' Perform RUV removal of unwanted variations
-#' This function is written by Johann Gagnon-Bartsch and will become part of the
-#' ruv package.
+#' RUV normalization function
+#' 
+#' Based on method and code from Johann Gagnon-Bartsch. This function is written by Johann Gagnon-Bartsch and will become
+#'part of the ruv package.
+#' @param Y The matrix of values to be normalized
+#' @param M A amtrix that describes the organization of the replicates in the Y matrix
+#' @param ctl An integer vector denoted which columns in the Y matrix are controls
+#' @param k The numbe rof factors to remove
+#' @param average Logical to determine if averages should be returned
+#' @param fullalpha 
+#' @return A list with the normalized Y values and the fullalpha matrix
 RUVIII = function(Y, M, ctl, k=NULL, eta=NULL, average=FALSE, fullalpha=NULL)
 {
   Y = RUV1(Y,eta,ctl)

@@ -2,15 +2,28 @@
 % Please edit documentation in R/RUV_normalize_functions.R
 \name{RUVIII}
 \alias{RUVIII}
-\title{Perform RUV removal of unwanted variations
-This function is written by Johann Gagnon-Bartsch and will become part of the
-ruv package.}
+\title{RUV normalization function}
 \usage{
 RUVIII(Y, M, ctl, k = NULL, eta = NULL, average = FALSE,
   fullalpha = NULL)
 }
+\arguments{
+\item{Y}{The matrix of values to be normalized}
+
+\item{M}{A amtrix that describes the organization of the replicates in the Y matrix}
+
+\item{ctl}{An integer vector denoted which columns in the Y matrix are controls}
+
+\item{k}{The numbe rof factors to remove}
+
+\item{average}{Logical to determine if averages should be returned}
+
+\item{fullalpha}{}
+}
+\value{
+A list with the normalized Y values and the fullalpha matrix
+}
 \description{
-Perform RUV removal of unwanted variations
-This function is written by Johann Gagnon-Bartsch and will become part of the
-ruv package.
+Based on method and code from Johann Gagnon-Bartsch. This function is written by Johann Gagnon-Bartsch and will become
+part of the ruv package.
 }

@@ -219,7 +219,9 @@ calc2NProportion <- function(x){
   return(proportion2N)
 }
 
-#'
+#' Calculate the proportion of x that are TRUE
+#' @param x A logical vector
+#' @return The proportion of X that are TRUE
 #'@export
 #Calculate the proportions in the gates
 calcProportion <- function(x){

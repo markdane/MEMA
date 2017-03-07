@@ -262,6 +262,8 @@ logIntensities <- function(dt){
 }
 
 #' Utility function that returns log2 with lower non-infinite bound  
+#' @param x Vector to be log2 transformed
+#' @return log2 values of x
 #' @export
 boundedLog2 <- function(x){
   #use the smallest non zero value as the minimum
@@ -270,6 +272,38 @@ boundedLog2 <- function(x){
   x[x==0]<- xMin
   xLog2 <- log2(x)
   return(xLog2)
+}
+
+#' Utility function that returns logit with lower and upper non-infinite bound  
+#' @param x Vector to be logit transformed
+#' @return logit values of x
+#' #' @export
+boundedLogit <- function(x){
+  xMin <- min(x, na.rm=TRUE)
+  if (xMin==0) xMin <- unique(x[order(x)])[2]
+  if(is.na(xMin)) xMin<-.01
+  x[x==0]<- xMin/2
+  xMax <- max(x, na.rm=TRUE)
+  if (xMax==1) xMax <- unique(x[order(x)])[length(unique(x))-1]
+  if(length(xMax)==0) xMax<-.99
+  x[x==1]<- (xMax+1)/2
+  xLogit <- log2(x/(1-x))
+  return(xLogit)
+}
+
+#' Replace the long names for hyaluronic acid with abbreviations
+#' 
+#' @param x a chanracter vector that may contain names to be abbreviated
+#' @return The same character vector with abbrevaitaions as needed. hyaluronic_acid_greater_than_500kDa becomes
+#' HA>500kDa and hyaluronic_acid_less_than_500kDa becomes HA<500kDa.
+#' @export
+compressHA <- function(x){
+  x <- gsub("(hyaluronic_acid_greater_than_500kDa)","HA>500kDa",x)
+  x <- gsub("(hyaluronic_acid_less_than_500kDa)","HA<500kDa",x)
+  x <- gsub("hyaluronicacid","HA",x)
+  x <- gsub("lessthan","<",x)
+  x <- gsub("greaterthan",">",x)
+  return(x)
 }
 
 #' Create a median normalized loess model of an array
@@ -316,4 +350,56 @@ wellAN<-function(nrRows,nrCols){
 cleanColumnNames<-function(dt){
   data.table::setnames(dt,gsub("[.]"," ",make.names(colnames(dt))))
   return(dt)
+}
+
+#' Get barcodes from the Synapse Plate Tracker files
+#' @param studyName Character string of the study name
+#' @return Barcodes of the plates in the study
+#' @export
+getBarcodes <- function(studyName){
+  library(synapseClient)
+  
+  synapseLogin()
+  barcodes <- synGet("syn8313413") %>%
+    synapseClient::getFileLocation() %>%
+    data.table::fread(check.names = TRUE) %>%
+    dplyr::filter(Study.Name == studyName) %>%
+    dplyr::select(Plate.IDs) %>%
+    stringr::str_split(",") %>%
+    unlist()
+  return(barcodes)
+}
+
+#' Get the spot level data for a study
+#' 
+#' @param studyName The name of a study that contains data from one or more plates
+#' @param path The path to the directory that contains the barcode level subdirectories
+#' @return A datatable with the annotated data for all plates in the study. Any data for fiducials and 
+#' blank spots is filtered out.
+#' @export
+getSpotLevelData <- function(studyName, path){
+  slDT <- getBarcodes(studyName) %>%
+    lapply(function(barcode, path){
+      sd <- fread(paste0(path,"/",barcode,"/Analysis/",barcode,"_Level2.tsv"))
+    }, path=path) %>%
+    rbindlist()
+  slDT$BW <- paste(slDT$Barcode,slDT$Well,sep="_")
+  slDT <- slDT[!grepl("fiducial|Fiducial|gelatin|blank|air|PBS",slDT$ECMp),]
+  return(slDT)
+}
+
+#' Add in the barcodes the MEPs came from
+#' 
+#' Add a barcode column that has one or more barcodes of the data's well plates
+#' @param dt3 A spot level datatable with MEP_Drug and Barcode columns
+#' @param dt4 A MEP level datatable with a MEP_Drug column
+#' @return The input MEP level datatable with a Barcode column added
+#' @export
+addBarcodes <- function(dt3, dt4){
+  barcodesList <- lapply(unique(dt4$MEP_Drug), function(m){
+    Barcodes=paste(unique(dt3$Barcode[dt3$MEP_Drug==m]), collapse = ",")
+  })
+  bmdDT <- data.table(Barcode = unlist(barcodesList), MEP_Drug=unique(dt4$MEP_Drug))
+  dt4 <- merge(bmdDT,dt4,by="MEP_Drug")
+  return(dt4)
 }

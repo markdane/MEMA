@@ -14,3 +14,9 @@ The MEMA package functions merge the experiment metadata with the imaging data, 
     devtools::install_github("markdane/MEMA")
 
     ```
+or the development version with the command:
+
+    ``` r
+    devtools::install_github("markdane/MEMA", ref="Devel")
+
+    ```

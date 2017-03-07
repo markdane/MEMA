@@ -74,59 +74,67 @@ convertColumnNames <- function (DT) {
 #'@export
 numericMedian <- function(x) as.numeric(median(x))
 
-#'
+
+#' Process the metadata in an an2omero file
+#' @param fileName The full name with path for the an2omero file
+#' @return A datatable where each row is a unique spot in one well plate 
 #'@export
-compressHA <- function(x){
-  x <- gsub("(hyaluronic_acid_greater_than_500kDa)","HA>500kDa",x)
-  x <- gsub("(hyaluronic_acid_less_than_500kDa)","HA<500kDa",x)
-  x <- gsub("hyaluronicacid","HA",x)
-  x <- gsub("lessthan","<",x)
-  x <- gsub("greaterthan",">",x)
-  return(x)
+processan2omero <- function (fileName) {
+  #Process the file
+  dt <- fread(fileName,header = TRUE)
+  #Assign WellIndex values
+  setkey(dt, Well)
+  wi <- data.table(Well = unique(dt$Well), WellIndex = 1:length(unique(dt$Well)))
+  dt <- merge(dt,wi)
+  #Rename to preprocessing pipeline variable names
+  setnames(dt,"OSpot","Spot")
+  setnames(dt,"PlateID","Barcode")
+  dt$EndpointDAPI <- dt[["395nm"]]
+  dt$Endpoint488 <- dt[["488nm"]]
+  dt$Endpoint555 <- dt[["555nm"]]
+  dt$Endpoint647 <- dt[["640nm"]]
+  dt$Endpoint750 <- dt[["750nm"]]
+  #Shorten and combine Annot names
+  dt$CellLine <- gsub("_.*","",dt$CellLine)
+  dt$ECM1 <- compressHA(dt$ECM1)
+  dt$ECM2 <- compressHA(dt$ECM2)
+  dt$ECM3 <- compressHA(dt$ECM3)
+  #Chain ECM proteins if the second one is not COL1
+  dt$ECMp <-paste0(gsub("_.*","",dt$ECM1),"_",gsub("_.*","",dt$ECM2),"_",gsub("_.*","",dt$ECM3)) %>%
+    gsub("_NA","",.) %>%
+    gsub("_COL1|_$","",.)
+  #Chain ligands
+  dt$Ligand <-paste0(gsub("_.*","",dt$Ligand1),"_",gsub("_.*","",dt$Ligand2)) %>%
+    gsub("_NA","",.)
+  dt$MEP <- paste0(dt$ECMp,"_",dt$Ligand)
+  dt$Drug <- gsub("_.*","",dt$Drug1)
+  dt$MEP_Drug <-paste0(dt$MEP,"_",dt$Drug)
+  dt$EndpointDAPI <-gsub("_.*","",dt$EndpointDAPI)
+  dt$Endpoint488 <-gsub("_.*","",dt$Endpoint488)
+  dt$Endpoint555 <-gsub("_.*","",dt$Endpoint555)
+  dt$Endpoint647 <-gsub("_.*","",dt$Endpoint647)
+  #Add a WellSpace spot index that recognizes the arrays are rotated 180 degrees
+  dt$PrintSpot <- dt$Spot
+  nrArrayRows <- max(dt$ArrayRow)
+  nrArrayColumns <- max(dt$ArrayColumn)
+  dt$PrintSpot[grepl("B", dt$Well)] <- (nrArrayRows*nrArrayColumns+1)-dt$PrintSpot[grepl("B", dt$Well)]
+  return(dt)
 }
 
-#'
-#'@export
-processan2omero <- function (fileNames) {
-  rbindlist(lapply(fileNames, function(fn){
-    #Process each file separately
-    dt <- fread(fn,header = TRUE)
-    
-    #Rename to preprocessing pipeline variable names
-    setnames(dt,"OSpot","Spot")
-    setnames(dt,"PlateID","Barcode")
-    setnames(dt,"395nm","EndpointDAPI")
-    setnames(dt,"488nm","Endpoint488")
-    setnames(dt,"555nm","Endpoint555")
-    setnames(dt,"640nm","Endpoint647")
-    setnames(dt,"750nm","Endpoint750")
-    #Shorten and combine Annot names
-    dt$CellLine <- gsub("_.*","",dt$CellLine)
-    dt$ECM1 <- compressHA(dt$ECM1)
-    dt$ECM2 <- compressHA(dt$ECM2)
-    dt$ECM3 <- compressHA(dt$ECM3)
-    #Chain ECM proteins if the second one is not COL1
-    dt$ECMp <-paste0(gsub("_.*","",dt$ECM1),"_",gsub("_.*","",dt$ECM2),"_",gsub("_.*","",dt$ECM3)) %>%
-      gsub("_NA","",.) %>%
-      gsub("_COL1|_$","",.)
-    #Chain ligands
-    dt$Ligand <-paste0(gsub("_.*","",dt$Ligand1),"_",gsub("_.*","",dt$Ligand2)) %>%
-      gsub("_NA","",.)
-    dt$MEP <- paste0(dt$ECMp,"_",dt$Ligand)
-    dt$Drug <- gsub("_.*","",dt$Drug1)
-    dt$MEP_Drug <-paste0(dt$MEP,"_",dt$Drug)
-    dt$EndpointDAPI <-gsub("_.*","",dt$EndpointDAPI)
-    dt$Endpoint488 <-gsub("_.*","",dt$Endpoint488)
-    dt$Endpoint555 <-gsub("_.*","",dt$Endpoint555)
-    dt$Endpoint647 <-gsub("_.*","",dt$Endpoint647)
-    #Add a WellSpace spot index that recognizes the arrays are rotated 180 degrees
-    dt$PrintSpot <- dt$Spot
-    nrArrayRows <- max(dt$ArrayRow)
-    nrArrayColumns <- max(dt$ArrayColumn)
-    dt$PrintSpot[grepl("B", dt$Well)] <- (nrArrayRows*nrArrayColumns+1)-dt$PrintSpot[grepl("B", dt$Well)]
-    return(dt)
-    #  }, mc.cores=max(4, detectCores())))
-  }))
-  
+#' Read in and merge the Omero URLs
+#' 
+#' Adds Omero image IDs based on the WelIndex values
+#' 
+#' @param barcodePath The path to the file named barcode_imageIDs.tsv
+#' @return a datatable with WellIndex, ArrayRow, ArrayColumn and ImageID columns
+#' @export
+getOmeroIDs <- function(barcodePath){
+  barcode <- gsub(".*/","",barcodePath)
+  dt <- fread(paste0(barcodePath,"/Analysis/",barcode,"_imageIDs.tsv"))[,list(WellName,Row,Column,ImageID)]
+  #Extract well index and convert to alphanumeric label
+  dt[,WellIndex := as.integer(gsub(".*_Well","",WellName))]
+  setnames(dt,"Row","ArrayRow")
+  setnames(dt,"Column","ArrayColumn")
+  dt[,WellName := NULL]
+  return(dt)
 }
-
