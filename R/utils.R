@@ -262,6 +262,8 @@ logIntensities <- function(dt){
 }
 
 #' Utility function that returns log2 with lower non-infinite bound  
+#' @param x Vector to be log2 transformed
+#' @return log2 values of x
 #' @export
 boundedLog2 <- function(x){
   #use the smallest non zero value as the minimum
@@ -270,6 +272,38 @@ boundedLog2 <- function(x){
   x[x==0]<- xMin
   xLog2 <- log2(x)
   return(xLog2)
+}
+
+#' Utility function that returns logit with lower and upper non-infinite bound  
+#' @param x Vector to be logit transformed
+#' @return logit values of x
+#' #' @export
+boundedLogit <- function(x){
+  xMin <- min(x, na.rm=TRUE)
+  if (xMin==0) xMin <- unique(x[order(x)])[2]
+  if(is.na(xMin)) xMin<-.01
+  x[x==0]<- xMin/2
+  xMax <- max(x, na.rm=TRUE)
+  if (xMax==1) xMax <- unique(x[order(x)])[length(unique(x))-1]
+  if(length(xMax)==0) xMax<-.99
+  x[x==1]<- (xMax+1)/2
+  xLogit <- log2(x/(1-x))
+  return(xLogit)
+}
+
+#' Replace the long names for hyaluronic acid with abbreviations
+#' 
+#' @param x a chanracter vector that may contain names to be abbreviated
+#' @return The same character vector with abbrevaitaions as needed. hyaluronic_acid_greater_than_500kDa becomes
+#' HA>500kDa and hyaluronic_acid_less_than_500kDa becomes HA<500kDa.
+#' @export
+compressHA <- function(x){
+  x <- gsub("(hyaluronic_acid_greater_than_500kDa)","HA>500kDa",x)
+  x <- gsub("(hyaluronic_acid_less_than_500kDa)","HA<500kDa",x)
+  x <- gsub("hyaluronicacid","HA",x)
+  x <- gsub("lessthan","<",x)
+  x <- gsub("greaterthan",">",x)
+  return(x)
 }
 
 #' Create a median normalized loess model of an array
@@ -345,9 +379,9 @@ getBarcodes <- function(studyName){
 #' @export
 getSpotLevelData <- function(studyName, path){
   slDT <- getBarcodes(studyName) %>%
-    mclapply(function(barcode, path){
-      sd <- fread(paste0(path,"/",barcode,"/Analysis/",barcode,"_SpotLevel.tsv"))
-    }, path=path, mc.cores=detectCores()) %>%
+    lapply(function(barcode, path){
+      sd <- fread(paste0(path,"/",barcode,"/Analysis/",barcode,"_Level2.tsv"))
+    }, path=path) %>%
     rbindlist()
   slDT$BW <- paste(slDT$Barcode,slDT$Well,sep="_")
   slDT <- slDT[!grepl("fiducial|Fiducial|gelatin|blank|air|PBS",slDT$ECMp),]

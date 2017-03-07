@@ -6,6 +6,12 @@
 \usage{
 boundedLog2(x)
 }
+\arguments{
+\item{x}{Vector to be log2 transformed}
+}
+\value{
+log2 values of x
+}
 \description{
 Utility function that returns log2 with lower non-infinite bound
 }

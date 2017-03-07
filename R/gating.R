@@ -1,4 +1,7 @@
 #' Find a local minima appropriate for classiying a vector of numbers
+#' @param x A vector of values 
+#' @param probs Probabilities that limit where to look for the minimum
+#' @return The minimum value between the probs
 localMinima <- function(x, probs=c(.2,.8)){
   #Finds the local minima between the probs quantiles
   #x numeric vector
@@ -11,8 +14,11 @@ localMinima <- function(x, probs=c(.2,.8)){
   return(o$minimum)
 }
 
-
-#'
+#' Gate values at a specific quantile
+#' @param x A vector of values
+#' @param probsThe quantile for gating
+#' @return An integer vector the same length as x with values of 0 for the lower class and 1
+#' as the upper class value
 #'@export
 gateOnQuantile <- function(x,probs){
   gatedClass <- integer(length(x))

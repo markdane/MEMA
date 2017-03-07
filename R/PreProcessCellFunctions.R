@@ -161,8 +161,8 @@ getMetadata <- function(barcode, path, useAnnotMetadata=TRUE){
 #' Get the data from the Cell Profiler pipeline
 #' @export
 getCPData <- function(dataBWInfo, curatedOnly=TRUE, curatedCols= "ImageNumber|ObjectNumber|AreaShape|_MedianIntensity_|_IntegratedIntensity_|_Center_|_PA_|Texture", verbose=FALSE){
-  dtL <- mclapply(unique(dataBWInfo$Well), function(well){
-    if(verbose) cat(paste("Reading and annotating data for",barcode, well,"\n"))
+  dtL <- lapply(unique(dataBWInfo$Well), function(well){
+    if(verbose) message(paste("Reading and annotating data for",barcode, well,"\n"))
     nuclei <- convertColumnNames(fread(dataBWInfo$Path[grepl("Nuclei",dataBWInfo$Location)&grepl(well,dataBWInfo$Well)]))
     if (curatedOnly) nuclei <- nuclei[,grep(curatedCols,colnames(nuclei)), with=FALSE]
     setnames(nuclei,paste0("Nuclei_",colnames(nuclei)))
@@ -202,13 +202,13 @@ getCPData <- function(dataBWInfo, curatedOnly=TRUE, curatedCols= "ImageNumber|Ob
     scaledInts <- dt[,intensityNames, with=FALSE]*2^16
     dt <- cbind(dt[,!intensityNames, with=FALSE],scaledInts)
     return(dt)
-  },mc.cores=detectCores())
+  })
 }
 #' Read and convert INCell data to CP format
 #' @param cellDataFilePaths A character vector of the file paths to the cell level data
 #' @export
 getICData <- function(cellDataFilePaths, endPoint488, endPoint555, endPoint647, verbose=FALSE){
-  if(verbose) cat(paste("Reading and annotating INCell data for",barcode,"\n"))
+  if(verbose) message(paste("Reading and annotating INCell data for",barcode,"\n"))
   #Read and combine the 2 header rows after the summary information
   hdrRows <- read.csv(cellDataFilePaths,skip = 18, nrows=2, header=FALSE,stringsAsFactors = FALSE)
   hdr <- sub("^_","",paste(hdrRows[1,],hdrRows[2,],sep="_"))
@@ -423,16 +423,14 @@ gateCells <- function(dt){
 }
 
 #' Write the cell level raw data and metadata Level 1 data. 
-#'
+#' @param dt A datatable of cell level data to be written to disk
+#' @param path The path to write the file
+#' @param barcode The barcode that will be encoded into the file name
+#'@return  None called for the side effect of writing to disk
 #'@export
 writeCellLevel <- function(dt,path,barcode, verbose=FALSE){
-  if(verbose) cat("Writing",barcode,"level 1 full file to disk\n")
+  if(verbose) message(paste("Writing",barcode,"level 1 full file to disk\n"))
   writeTime<-Sys.time()
   fwrite(dt, paste0(path,barcode, "/Analysis/", barcode,"_","Level1.tsv"), sep = "\t", quote=FALSE)
-  if(verbose)cat("Write time:", Sys.time()-writeTime,"\n")
-  if(verbose) cat("Writing",barcode,"level 1 subset file to disk\n")
-  writeTime<-Sys.time()
-  set.seed(42)
-  fwrite(dt[sample(x=1:nrow(dt),size = .1*nrow(dt),replace=FALSE),], paste0(barcodePath, "/Analysis/", barcode,"_","Level1Subset.tsv"), sep = "\t", quote=FALSE)
-  if(verbose)cat("Write time:", Sys.time()-writeTime,"\n")
+  if(verbose) message(paste("Write time:", Sys.time()-writeTime,"\n"))
 }  

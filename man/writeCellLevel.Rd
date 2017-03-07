@@ -6,6 +6,16 @@
 \usage{
 writeCellLevel(dt, path, barcode, verbose = FALSE)
 }
+\arguments{
+\item{dt}{A datatable of cell level data to be written to disk}
+
+\item{path}{The path to write the file}
+
+\item{barcode}{The barcode that will be encoded into the file name}
+}
+\value{
+None called for the side effect of writing to disk
+}
 \description{
 Write the cell level raw data and metadata Level 1 data.
 }

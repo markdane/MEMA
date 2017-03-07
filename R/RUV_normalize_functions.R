@@ -81,7 +81,7 @@ normRUVLoessResiduals <- function(dt, k){
   btLog2 <- function(x) x^2
   dtLog <- signalDT[,lapply(.SD,btLog2),.SDcols=log2Names]
   logitNames <- grep("Logit",colnames(signalDT), value=TRUE)
-  dtLogit <- signalDT[,lapply(.SD,btLogit),.SDcols=logitNames]
+  dtLogit <- signalDT[,lapply(.SD,plogis),.SDcols=logitNames]
   signalDT <- cbind(signalDT[,.(BW,PrintSpot)],dtLog,dtLogit)
   #Label as Norm instead of RUVLoess
   setnames(signalDT,
@@ -149,9 +149,17 @@ signalResidualMatrix <- function(dt){
   return(srm)
 }
 
-#' Perform RUV removal of unwanted variations
-#' This function is written by Johann Gagnon-Bartsch and will become part of the
-#' ruv package.
+#' RUV normalization function
+#' 
+#' Based on method and code from Johann Gagnon-Bartsch. This function is written by Johann Gagnon-Bartsch and will become
+#'part of the ruv package.
+#' @param Y The matrix of values to be normalized
+#' @param M A amtrix that describes the organization of the replicates in the Y matrix
+#' @param ctl An integer vector denoted which columns in the Y matrix are controls
+#' @param k The numbe rof factors to remove
+#' @param average Logical to determine if averages should be returned
+#' @param fullalpha 
+#' @return A list with the normalized Y values and the fullalpha matrix
 RUVIII = function(Y, M, ctl, k=NULL, eta=NULL, average=FALSE, fullalpha=NULL)
 {
   Y = RUV1(Y,eta,ctl)
