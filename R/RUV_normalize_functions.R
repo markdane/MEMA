@@ -50,13 +50,16 @@ normRUVLoessResiduals <- function(dt, k){
     #Hardcode in identification of residuals as the controls
     resStart <- ncol(Y)/2+1
     cIdx=resStart:ncol(Y)
-    nY <- RUVArrayWithResiduals(k, Y, M, cIdx, srmName) #Normalize the spot level data
+    nY <- try(RUVArrayWithResiduals(k, Y, M, cIdx, srmName), silent = TRUE) #Normalize the spot level data
+    if(!is.data.table(nY)) return(NULL)
     nY$SignalName <- paste0(srmName,"RUV")
     setnames(nY,srmName,paste0(srmName,"RUV"))
     #nY[[srmName]] <- as.vector(Y[,1:(resStart-1)]) #Add back in the raw signal (may not be needed)
     return(nY)
   }, srmList=srmList, M=M, k=k)
   
+  #Remove NULL elements that were due to data that failed normalization
+  srmRUVList <- srmRUVList[!sapply(srmRUVList,FUN = is.null)]
   #Reannotate with ECMp, Drug, ArrayRow and ArrayColumn as needed for loess normalization
   ECMpDT <- unique(srDT[,list(Well,PrintSpot,Spot,ECMp,Drug, ArrayRow,ArrayColumn)])
   srmERUVList <- lapply(srmRUVList, function(dt,ECMpDT){
@@ -156,7 +159,7 @@ signalResidualMatrix <- function(dt){
 #' @param Y The matrix of values to be normalized
 #' @param M A amtrix that describes the organization of the replicates in the Y matrix
 #' @param ctl An integer vector denoted which columns in the Y matrix are controls
-#' @param k The numbe rof factors to remove
+#' @param k The number of factors to remove
 #' @param average Logical to determine if averages should be returned
 #' @param fullalpha 
 #' @return A list with the normalized Y values and the fullalpha matrix
