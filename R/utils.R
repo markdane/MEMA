@@ -363,8 +363,8 @@ getBarcodes <- function(studyName){
   barcodes <- synGet("syn8313413") %>%
     synapseClient::getFileLocation() %>%
     data.table::fread(check.names = TRUE) %>%
-    dplyr::filter(Study.Name == studyName) %>%
-    dplyr::select(Plate.IDs) %>%
+    dplyr::filter(StudyName==str_to_lower(studyName)) %>%
+    dplyr::select(Barcode) %>%
     stringr::str_split(",") %>%
     unlist()
   return(barcodes)
