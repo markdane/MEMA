@@ -125,9 +125,12 @@ processan2omero <- function (fileName) {
              mmol_per_L = 1e3,
              umol_per_L = 1,
              nmol_per_L = 1e-3,
-             pmol_per_L = 1e-6)
+             pmol_per_L = 1e-6,
+             0)
     })
+  #Error handling for when there is no drug metadata
   dt$Drug1Conc <- dt$Drug1AnConc*ConcFactor
+  dt$Drug1Conc[is.na(dt$Drug1Conc)] <- 0
   return(dt)
 }
 
