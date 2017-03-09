@@ -1,7 +1,7 @@
 Package: MEMA
 Type: Package
 Title: Functions to preprocess and normalize MEMA data
-Version: 0.1.0-alpha
+Version: 0.1.0-1
 Date: 8-3-2017
 Authors@R: person("Mark", "Dane", ,"dane@ohsu.edu", role = c("aut", "cre"))
 Description: The functions in this package merge imaging data with the metadata,
