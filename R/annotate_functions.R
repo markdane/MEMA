@@ -118,6 +118,19 @@ processan2omero <- function (fileName) {
   nrArrayRows <- max(dt$ArrayRow)
   nrArrayColumns <- max(dt$ArrayColumn)
   dt$PrintSpot[grepl("B", dt$Well)] <- (nrArrayRows*nrArrayColumns+1)-dt$PrintSpot[grepl("B", dt$Well)]
+  #Add a drug concentration in uM/L
+  ConcFactor <- str_extract(dt$Drug1AnConcUnit,".*_per_.") %>%
+    sapply(., function(x){
+      switch(x,
+             mmol_per_L = 1e3,
+             umol_per_L = 1,
+             nmol_per_L = 1e-3,
+             pmol_per_L = 1e-6,
+             0)
+    })
+  #Error handling for when there is no drug metadata
+  dt$Drug1Conc <- dt$Drug1AnConc*ConcFactor
+  dt$Drug1Conc[is.na(dt$Drug1Conc)] <- 0
   return(dt)
 }
 

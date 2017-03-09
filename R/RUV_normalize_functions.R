@@ -5,7 +5,7 @@
 #'@param k  The number of factors to be reomved in the RUV normalization
 #' @export
 normRUVLoessResiduals <- function(dt, k){
-  setkey(dt,CellLine,Barcode,Well,Ligand,Drug,ECMp)
+  setkey(dt,CellLine,Barcode,Well,Ligand,Drug,Drug1Conc,ECMp)
   #Transform signals to be on additive scale
   #log transform all intensity and areaShape values
   log2Names <- grep("_Center_|_Eccentricity|_Orientation",grep("SpotCellCount|Intensity|AreaShape",colnames(dt), value=TRUE, ignore.case = TRUE), value=TRUE, invert=TRUE)
@@ -16,9 +16,9 @@ normRUVLoessResiduals <- function(dt, k){
   dtLogit <- dt[,lapply(.SD,boundedLogit),.SDcols=logitNames]
   setnames(dtLogit,colnames(dtLogit),paste0(colnames(dtLogit),"Logit"))
   signalNames <- c(colnames(dtLog),colnames(dtLogit))
-  dt <-  cbind(dt[,grep("^CellLine$|Barcode|^Well$|^Spot$|^PrintSpot$|ArrayRow|ArrayColumn|^ECMp$|^Ligand$|^Drug$",colnames(dt),value=TRUE),with=FALSE],dtLog,dtLogit)
+  dt <-  cbind(dt[,grep("^CellLine$|Barcode|^Well$|^Spot$|^PrintSpot$|ArrayRow|ArrayColumn|^ECMp$|^Ligand$|^Drug$|^Drug1Conc$",colnames(dt),value=TRUE),with=FALSE],dtLog,dtLogit)
   #Add residuals from subtracting the biological medians from each value
-  residuals <- dt[,lapply(.SD,calcResidual), by="CellLine,Barcode,Well,Ligand,Drug,ECMp", .SDcols=signalNames]
+  residuals <- dt[,lapply(.SD,calcResidual), by="CellLine,Barcode,Well,Ligand,Drug,Drug1Conc,ECMp", .SDcols=signalNames]
   #Add within array location metadata
   residuals$Spot <- as.integer(dt$Spot)
   residuals$PrintSpot <- as.integer(dt$PrintSpot)
@@ -30,12 +30,12 @@ normRUVLoessResiduals <- function(dt, k){
   srDT <- rbind(dt,residuals)
   
   #Add to carry metadata into matrices
-  srDT$BWLD <- paste(srDT$Barcode, srDT$Well, srDT$Ligand,  srDT$Drug, sep="_") 
+  srDT$BWLDDc <- paste(srDT$Barcode, srDT$Well, srDT$Ligand,  srDT$Drug,  srDT$Drug1Conc, sep="_") 
   
   #Create the M matrix which denotes replicates
-  M <- createRUVM(srDT, replicateCols=c("CellLine","Ligand","Drug"))
+  M <- createRUVM(srDT, replicateCols=c("CellLine","Ligand","Drug","Drug1Conc"))
   
-  #Add BWL but need to check if this can be only BW
+  #Add BW 
   srDT$BW <- paste(srDT$Barcode, srDT$Well, sep="_") 
   #Make a list of matrices that hold signal and residual values
   srmList <- lapply(signalNames, function(signalName, dt){
@@ -432,7 +432,7 @@ loessNormArray <- function(dt){
 #   M <- M[order(rownames(M)),]
 #   
 #   srmList <- lapply(signalNames, function(signalName, dt){
-#     srm <- MEMA:::signalResidualMatrix(dt[,.SD, .SDcols=c("BWL", "PrintSpot", "SignalType", signalName)])
+#     srm <- signalResidualMatrix(dt[,.SD, .SDcols=c("BWL", "PrintSpot", "SignalType", signalName)])
 #     return(srm)
 #   },dt=srDT)
 #   names(srmList) <- signalNames
