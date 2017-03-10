@@ -14,7 +14,7 @@ RUVIII(Y, M, ctl, k = NULL, eta = NULL, average = FALSE,
 
 \item{ctl}{An integer vector denoted which columns in the Y matrix are controls}
 
-\item{k}{The numbe rof factors to remove}
+\item{k}{The number of factors to remove}
 
 \item{average}{Logical to determine if averages should be returned}
 
