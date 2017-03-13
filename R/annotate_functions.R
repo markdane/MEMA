@@ -72,7 +72,7 @@ convertColumnNames <- function (DT) {
 #' @return The median of x as a numeric value
 #'
 #'@export
-numericMedian <- function(x) as.numeric(median(x))
+numericMedian <- function(x) as.numeric(median(x, na.rm = TRUE))
 
 
 #' Process the metadata in an an2omero file
@@ -119,13 +119,17 @@ processan2omero <- function (fileName) {
   nrArrayColumns <- max(dt$ArrayColumn)
   dt$PrintSpot[grepl("B", dt$Well)] <- (nrArrayRows*nrArrayColumns+1)-dt$PrintSpot[grepl("B", dt$Well)]
   #Add a drug concentration in uM/L
-  ConcFactor <- str_extract(dt$Drug1AnConcUnit,".*_per_.") %>%
+  ConcFactor <- str_extract(dt$Drug1AnConcUnit,".*_per_.|.molar|volume_percent") %>%
     sapply(., function(x){
       switch(x,
              mmol_per_L = 1e3,
              umol_per_L = 1,
              nmol_per_L = 1e-3,
              pmol_per_L = 1e-6,
+             mmolar = 1e6,
+             umolar = 1e3,
+             nmolar = 1,
+             pmolar = 1e-3,
              0)
     })
   #Error handling for when there is no drug metadata

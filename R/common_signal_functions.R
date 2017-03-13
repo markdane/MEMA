@@ -74,14 +74,3 @@ cleanCommonSignalDt <- function(dt){
   # dt <-dt[!dt$QA_LowWellQA,]
   return(dt)
 }
-# 
-# #' @export
-# level4CommonSignals <-function(dt){
-#   l4 <- createl4KeepRaw(dt)
-#   #Combine the FBS replicates
-#   l4$Ligand<-gsub("FBS.*","FBS",l4$Ligand)
-#   l4$MEP<-gsub("FBS.*","FBS",l4$MEP)
-#   #Summarize the FBS MEPs
-#   l4FBS <- summarizeFBS(l4)
-#   return(l4)
-# }
