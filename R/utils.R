@@ -360,7 +360,7 @@ getBarcodes <- function(studyName){
   library(synapseClient)
   
   synapseLogin()
-  barcodes <- synGet("syn8313413") %>%
+  barcodes <- synGet("syn8440875") %>%
     synapseClient::getFileLocation() %>%
     data.table::fread(check.names = TRUE) %>%
     dplyr::filter(StudyName==str_to_lower(studyName)) %>%

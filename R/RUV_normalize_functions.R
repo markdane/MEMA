@@ -2,7 +2,7 @@
 
 #'Apply RUV and Loess Normalization to the signals in a MEMA dataset
 #'@param dt A datatable with data and metadata to be normalzed. There must be CellLine, Barcode, Well, Ligand, Drug and ECMp metadata columns
-#'@param k  The number of factors to be reomved in the RUV normalization
+#'@param k  The number of factors to be removed in the RUV normalization
 #' @export
 normRUVLoessResiduals <- function(dt, k){
   setkey(dt,CellLine,Barcode,Well,Ligand,Drug,Drug1Conc,ECMp)
