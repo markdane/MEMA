@@ -4,7 +4,7 @@ The MEMA package includes functions to preprocess, QA, normalize and explore Mic
 
 <br>
 
-####Relative File Structure
+#### Relative File Structure
 
 The functions in this package assume the data is stored on the MEP-LINCS Synapse website or in a relative file structure that mimics the original server structure as described below:
 
@@ -24,22 +24,21 @@ The functions in this package assume the data is stored on the MEP-LINCS Synapse
     studyName_Level4.tsv replicate level data for a study that has been summarized from the level 3 data  
     
 <br>
-  
-####Preprocessing Pipeline Overview
+   
+#### Preprocessing Pipeline Overview
 The functions in this package support data from both CellProfiler and GE InCell segmentation pipelines. The metadata can come OHSU's An! metadata database or excel files. MEMAs can be in 8 or 96 well plates. 
 
 <br>
 
-####Package Downloads
+#### Package Downloads
 -   The MEMA package can be downloaded and installed from this repo with the command:
 
-    ``` r
-    devtools::install_github("MEP-LINCS/MEMA")
+```r
+devtools::install_github("MEP-LINCS/MEMA")
+```
 
-    ```
 or the development version with the command:
 
-    ``` r
-    devtools::install_github("MEP-LINCS/MEMA", ref="develop")
-
-    ```
+```r
+devtools::install_github("MEP-LINCS/MEMA", ref="develop")
+```
