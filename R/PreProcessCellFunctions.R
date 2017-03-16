@@ -1,35 +1,29 @@
 
 #'Read the well metadata from a multi-sheet Excel file
 #'
-#' @param path path to the directory with barcode level subdirectories
-#' @param barcode barcode or plate ID
+#' @param fn full path and file name for the well metadata file
 #' @return a datatable with the well level metadata 
 #' @export 
-getWellMetadata <- function(path, barcode){
-  fn <- dir(paste0(path,barcode,"/Analysis"),pattern = "xlsx",full.names = TRUE)
+getWellMetadata <- function(fn){
   if(!length(fn)==1) stop(paste("There must be 1 xlsx metadata file in the",barcode, "Analysis folder"))
   data.table(readMetadata(fn), key="Well")
 }
 
 #'Get deposition values from an Aushon log dta files
 #'
-#' @param path path to the directory with barcode level subdirectories
-#' @param barcode barcode or plate ID
+#' @param fn full path and file name for the log metadata file
 #' @return a datatable with an integer Depostion column
 #' @export 
-getLogMetadata <- function(path, barcode){
-  fn <- dir(paste0(path,barcode,"/Analysis"),pattern = "xml",full.names = TRUE)
+getLogMetadata <- function(fn){
   if(!length(fn)==1) stop(paste("There must be 1 xml file in the",barcode, "Analysis folder"))
   readLogData(fn)
 }
 #'Read the spot metadata from a gal file
 #'
-#' @param path path to the directory with barcode level subdirectories
-#' @param barcode barcode or plate ID
+#' @param fn full path and file name for the spot metadata file
 #' @return a datatable with the spot level metadata 
 #' @export 
-getSpotMetadata <- function(path, barcode){
-  fn <- dir(paste0(barcodePath,"/Analysis"),pattern = "gal",full.names = TRUE)
+getSpotMetadata <- function(fn){
   if(!length(fn)==1) stop(paste("There must be 1 gal file in the",barcode, "Analysis folder"))
   smd <- readSpotMetadata(fn)
   setnames(smd, "Name", "ECMp")
@@ -113,20 +107,20 @@ mergeSpot96WellMetadata <- function(spotMetadata,wellMetadata){
 #' Get metadata from either An! or !An! files
 #' 
 #' @export
-getMetadata <- function(barcode, path, useAnnotMetadata=TRUE){
+getMetadata <- function(metadataFiles, useAnnotMetadata=TRUE){
   #Use metadata from an2omero files
   if(useAnnotMetadata){
-    metadata <- processan2omero(paste0(path,barcode,"/Analysis/",barcode,"_an2omero.csv"))
+    metadata <- processan2omero(metadataFiles[["annotMetadata"]])
     MEMA8Well <- length(unique(metadata$Well))==8
     MEMA96Well <- length(unique(metadata$Well))==96
   } else { #Process xml, gal and excel files to get all metadata
     #Read the log metadata from an Aushon log file
-    ldf <- getLogMetadata(path, barcode)
+    ldf <- getLogMetadata(metadataFiles[["logMetadata"]])
     #Read in the spot metadata from the gal file
-    galmd <- getSpotMetadata(path,barcode)
+    galmd <- getSpotMetadata(metadataFiles[["spotMetadata"]])
     spotMetadata <- merge(galmd,ldf, by = c("Row","Column"), all=TRUE)
     #Read the well metadata from a multi-sheet Excel file
-    wellMetadata <- getWellMetadata(path, barcode)
+    wellMetadata <- getWellMetadata(metadataFiles[["wellMetadata"]])
     #Determine if this is metadata for an 8 or 96 well plate 
     MEMA8Well <- setequal(unique(wellMetadata$Well),c("A01","A02","A03","A04","B01","B02","B03","B04"))
     MEMA96Well <- length(unique(wellMetadata$Well))==96
