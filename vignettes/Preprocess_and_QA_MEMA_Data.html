@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="author" content="Mark Dane" />
+
+<meta name="date" content="2017-03-15" />
+
+<title>Preprocess and QA MEMA Data</title>
+
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+</style>
+
+
+
+<link href="data:text/css;charset=utf-8,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23header%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0A%7D%0Apre%20%7B%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%20code%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" rel="stylesheet" type="text/css" />
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Preprocess and QA MEMA Data</h1>
+<h4 class="author"><em>Mark Dane</em></h4>
+<h4 class="date"><em>2017-03-15</em></h4>
+
+
+
+<p>The MEMA package provides functions to preprocess, QA, analyze and explore data from the National Institure of Health’s <a href="https://www.synapse.org/#!Synapse:syn2862345">MEP-LINCS</a> project. MEP-LINCS uses immunofluorescent imaging to interogate cellular responses to different microenvironments. Combinations of extracellular matrix proteins and growth factors, ctyokines, ligands and drugs form the microenvironemnt perturbation or MEP. Specifically, MEPs are spots of extracelluar matrix proteins and the ligand, etc. in the surrounding media.</p>
+<div id="vignette-tamplate-to-be-deleted" class="section level4">
+<h4>Vignette tamplate to be deleted</h4>
+<p>Vignettes are long form documentation commonly included in packages. Because they are part of the distribution of the package, they need to be as compact as possible. The <code>html_vignette</code> output type provides a custom style sheet (and tweaks some options) to ensure that the resulting html is as small as possible. The <code>html_vignette</code> format:</p>
+<ul>
+<li>Never uses retina figures</li>
+<li>Has a smaller default figure size</li>
+<li>Uses a custom CSS stylesheet instead of the default Twitter Bootstrap style</li>
+</ul>
+</div>
+<div id="vignette-info" class="section level2">
+<h2>Vignette Info</h2>
+<p>Note the various macros within the <code>vignette</code> section of the metadata block above. These are required in order to instruct R how to build the vignette. Note that you should change the <code>title</code> field and the <code>\VignetteIndexEntry</code> to match the title of your vignette.</p>
+</div>
+<div id="styles" class="section level2">
+<h2>Styles</h2>
+<p>The <code>html_vignette</code> template includes a basic CSS theme. To override this theme you can specify your own CSS in the document metadata as follows:</p>
+<pre><code>output: 
+  rmarkdown::html_vignette:
+    css: mystyles.css</code></pre>
+</div>
+<div id="figures" class="section level2">
+<h2>Figures</h2>
+<p>The figure sizes have been customised so that you can easily put two images side-by-side.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">plot</span>(<span class="dv">1</span>:<span class="dv">10</span>)
+<span class="kw">plot</span>(<span class="dv">10</span>:<span class="dv">1</span>)</code></pre></div>
+<p><img src="data:image/png;base64,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" /><img src="data:image/png;base64,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" /></p>
+<p>You can enable figure captions by <code>fig_caption: yes</code> in YAML:</p>
+<pre><code>output:
+  rmarkdown::html_vignette:
+    fig_caption: yes</code></pre>
+<p>Then you can use the chunk option <code>fig.cap = &quot;Your figure caption.&quot;</code> in <strong>knitr</strong>.</p>
+</div>
+<div id="more-examples" class="section level2">
+<h2>More Examples</h2>
+<p>You can write math expressions, e.g. <span class="math inline">\(Y = X\beta + \epsilon\)</span>, footnotes<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a>, and tables, e.g. using <code>knitr::kable()</code>.</p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th align="right">mpg</th>
+<th align="right">cyl</th>
+<th align="right">disp</th>
+<th align="right">hp</th>
+<th align="right">drat</th>
+<th align="right">wt</th>
+<th align="right">qsec</th>
+<th align="right">vs</th>
+<th align="right">am</th>
+<th align="right">gear</th>
+<th align="right">carb</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Mazda RX4</td>
+<td align="right">21.0</td>
+<td align="right">6</td>
+<td align="right">160.0</td>
+<td align="right">110</td>
+<td align="right">3.90</td>
+<td align="right">2.620</td>
+<td align="right">16.46</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">4</td>
+<td align="right">4</td>
+</tr>
+<tr class="even">
+<td>Mazda RX4 Wag</td>
+<td align="right">21.0</td>
+<td align="right">6</td>
+<td align="right">160.0</td>
+<td align="right">110</td>
+<td align="right">3.90</td>
+<td align="right">2.875</td>
+<td align="right">17.02</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">4</td>
+<td align="right">4</td>
+</tr>
+<tr class="odd">
+<td>Datsun 710</td>
+<td align="right">22.8</td>
+<td align="right">4</td>
+<td align="right">108.0</td>
+<td align="right">93</td>
+<td align="right">3.85</td>
+<td align="right">2.320</td>
+<td align="right">18.61</td>
+<td align="right">1</td>
+<td align="right">1</td>
+<td align="right">4</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td>Hornet 4 Drive</td>
+<td align="right">21.4</td>
+<td align="right">6</td>
+<td align="right">258.0</td>
+<td align="right">110</td>
+<td align="right">3.08</td>
+<td align="right">3.215</td>
+<td align="right">19.44</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td>Hornet Sportabout</td>
+<td align="right">18.7</td>
+<td align="right">8</td>
+<td align="right">360.0</td>
+<td align="right">175</td>
+<td align="right">3.15</td>
+<td align="right">3.440</td>
+<td align="right">17.02</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td>Valiant</td>
+<td align="right">18.1</td>
+<td align="right">6</td>
+<td align="right">225.0</td>
+<td align="right">105</td>
+<td align="right">2.76</td>
+<td align="right">3.460</td>
+<td align="right">20.22</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td>Duster 360</td>
+<td align="right">14.3</td>
+<td align="right">8</td>
+<td align="right">360.0</td>
+<td align="right">245</td>
+<td align="right">3.21</td>
+<td align="right">3.570</td>
+<td align="right">15.84</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">4</td>
+</tr>
+<tr class="even">
+<td>Merc 240D</td>
+<td align="right">24.4</td>
+<td align="right">4</td>
+<td align="right">146.7</td>
+<td align="right">62</td>
+<td align="right">3.69</td>
+<td align="right">3.190</td>
+<td align="right">20.00</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">4</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td>Merc 230</td>
+<td align="right">22.8</td>
+<td align="right">4</td>
+<td align="right">140.8</td>
+<td align="right">95</td>
+<td align="right">3.92</td>
+<td align="right">3.150</td>
+<td align="right">22.90</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">4</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td>Merc 280</td>
+<td align="right">19.2</td>
+<td align="right">6</td>
+<td align="right">167.6</td>
+<td align="right">123</td>
+<td align="right">3.92</td>
+<td align="right">3.440</td>
+<td align="right">18.30</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">4</td>
+<td align="right">4</td>
+</tr>
+</tbody>
+</table>
+<p>Also a quote using <code>&gt;</code>:</p>
+<blockquote>
+<p>“He who gives up [code] safety for [code] speed deserves neither.” (<a href="https://twitter.com/hadleywickham/status/504368538874703872">via</a>)</p>
+</blockquote>
+</div>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>A footnote here.<a href="#fnref1">↩</a></p></li>
+</ol>
+</div>
+
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
