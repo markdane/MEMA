@@ -4,7 +4,7 @@
 \alias{getMetadata}
 \title{Get metadata from either An! or !An! files}
 \usage{
-getMetadata(barcode, path, useAnnotMetadata = TRUE)
+getMetadata(metadataFiles, useAnnotMetadata = TRUE)
 }
 \description{
 Get metadata from either An! or !An! files

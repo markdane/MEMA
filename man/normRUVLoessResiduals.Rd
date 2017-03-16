@@ -9,7 +9,7 @@ normRUVLoessResiduals(dt, k)
 \arguments{
 \item{dt}{A datatable with data and metadata to be normalzed. There must be CellLine, Barcode, Well, Ligand, Drug and ECMp metadata columns}
 
-\item{k}{The number of factors to be reomved in the RUV normalization}
+\item{k}{The number of factors to be removed in the RUV normalization}
 }
 \description{
 Apply RUV and Loess Normalization to the signals in a MEMA dataset

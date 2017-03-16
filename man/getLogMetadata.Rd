@@ -4,12 +4,10 @@
 \alias{getLogMetadata}
 \title{Get deposition values from an Aushon log dta files}
 \usage{
-getLogMetadata(path, barcode)
+getLogMetadata(fn)
 }
 \arguments{
-\item{path}{path to the directory with barcode level subdirectories}
-
-\item{barcode}{barcode or plate ID}
+\item{fn}{full path and file name for the log metadata file}
 }
 \value{
 a datatable with an integer Depostion column

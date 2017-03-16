@@ -4,12 +4,10 @@
 \alias{getSpotMetadata}
 \title{Read the spot metadata from a gal file}
 \usage{
-getSpotMetadata(path, barcode)
+getSpotMetadata(fn)
 }
 \arguments{
-\item{path}{path to the directory with barcode level subdirectories}
-
-\item{barcode}{barcode or plate ID}
+\item{fn}{full path and file name for the spot metadata file}
 }
 \value{
 a datatable with the spot level metadata
