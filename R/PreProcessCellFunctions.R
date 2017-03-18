@@ -253,8 +253,7 @@ getICData <- function(cellDataFilePaths, endPoint488, endPoint555, endPoint647, 
     if(x[[1]] %in% colnames(dt)) setnames(dt,x[[1]],x[[2]])
   })
   rm(foo)
-  #create an intergrated intenisty if one does not exist
-  if((!"Nuclei_CP_Intensity_IntegratedIntensity_Dapi" %in% colnames(dt))&"Nuclei_CP_AreaShape_Area" %in% colnames(dt)&"Nuclei_CP_Intensity_MedianIntensity_Dapi" %in% colnames(dt)) dt <- dt[, Nuclei_CP_Intensity_IntegratedIntensity_Dapi := Nuclei_CP_AreaShape_Area*Nuclei_CP_Intensity_MedianIntensity_Dapi]
+  
   dt$Barcode <- barcode
   dtL <-list(dt)
 }

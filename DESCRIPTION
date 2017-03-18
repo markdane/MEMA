@@ -23,7 +23,6 @@ Depends:
     data.table
 Suggests:
     knitr,
-    testthat,
-    rmarkdown
+    testthat
 VignetteBuilder: knitr
 RoxygenNote: 6.0.0
