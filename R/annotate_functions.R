@@ -149,7 +149,20 @@ getOmeroIDs <- function(barcodePath){
   barcode <- gsub(".*/","",barcodePath)
   dt <- fread(paste0(barcodePath,"/Analysis/",barcode,"_imageIDs.tsv"))[,list(WellName,Row,Column,ImageID)]
   #Extract well index and convert to alphanumeric label
-  dt[,WellIndex := as.integer(gsub(".*_Well","",WellName))]
+  #8 and 96 well plates have different layouts in the WellName column
+  if(grepl("Field",dt$WellName[1])){ #process as 96 well plate
+    wellRow <- stringr::str_extract(dt$WellName,".-") %>%
+      str_replace("-","") %>% 
+      match(LETTERS)
+    wellColumn <-  stringr::str_extract(dt$WellName,"-.*,") %>%
+      str_replace("-","") %>% 
+      str_replace(",","") %>% 
+      as.integer()
+    dt$WellIndex <- 12*(wellRow-1)+wellColumn
+  } else { #process as 8 well plate
+    dt[,WellIndex := as.integer(gsub(".*_Well","",WellName))]
+    
+  }
   setnames(dt,"Row","ArrayRow")
   setnames(dt,"Column","ArrayColumn")
   dt[,WellName := NULL]
