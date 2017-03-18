@@ -105,6 +105,11 @@ mergeSpot96WellMetadata <- function(spotMetadata,wellMetadata){
 }
 
 #' Get metadata from either An! or !An! files
+#' @param metadataFiles A list of of full file names for metadata. The items in 
+#' the list must have names of annotMetadata, logMetadata, spotMetadata or wellMetadata
+#' @param useAnnotMetadata Logical indicating whether to use metadata in Annot files
+#' or excel files
+#' @return A datatable containing the metadata
 #' 
 #' @export
 getMetadata <- function(metadataFiles, useAnnotMetadata=TRUE){
