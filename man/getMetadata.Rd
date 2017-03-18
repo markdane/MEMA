@@ -6,6 +6,16 @@
 \usage{
 getMetadata(metadataFiles, useAnnotMetadata = TRUE)
 }
+\arguments{
+\item{metadataFiles}{A list of of full file names for metadata. The items in 
+the list must have names of annotMetadata, logMetadata, spotMetadata or wellMetadata}
+
+\item{useAnnotMetadata}{Logical indicating whether to use metadata in Annot files
+or excel files}
+}
+\value{
+A datatable containing the metadata
+}
 \description{
 Get metadata from either An! or !An! files
 }
