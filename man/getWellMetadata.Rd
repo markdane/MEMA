@@ -4,12 +4,10 @@
 \alias{getWellMetadata}
 \title{Read the well metadata from a multi-sheet Excel file}
 \usage{
-getWellMetadata(path, barcode)
+getWellMetadata(fn)
 }
 \arguments{
-\item{path}{path to the directory with barcode level subdirectories}
-
-\item{barcode}{barcode or plate ID}
+\item{fn}{full path and file name for the well metadata file}
 }
 \value{
 a datatable with the well level metadata
