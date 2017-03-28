@@ -1,5 +1,5 @@
 ---
-title: "Preprocess and QA MEMA Data"
+title: "Preprocess and QA MEMA Cell Level and Spot Data"
 author: "Mark Dane"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
@@ -30,7 +30,7 @@ library(ggplot2)
   This vignette is based on the raw data from the MEP-LINCS experiment that uses Human Epethelial Mammary Cells (HMEC) from a healthy 19 year old woman, cell line HMEC240L. The first step is to provide login credentials to Synapse [need explanation of account and hiding credentials]
   
 ```{r login}
-synapseLogin()
+suppressMessages(synapseLogin())
 ```
 
   Each plate in the dataset has a unique ID that is encoded in a barcode label attached to the plate. We process each plate independently enabling sequential processing on smaller systems and parallel processing on larger systems. 
