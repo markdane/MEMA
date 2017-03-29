@@ -1,18 +1,20 @@
 ---
-title: "Preprocess and QA MEMA Cell Level and Spot Data"
+title: "Preprocess and QA MEMA Cell and Spot Level Data"
 author: "Mark Dane"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Preprocess and QA MEMA Data}
+  %\VignetteIndexEntry{Preprocess and QA MEMA Cell and Spot Level Data}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
-  
-  The MEMA package provides functions to preprocess, QA, analyze and explore data from the National Institure of Health's  [MEP-LINCS](https://www.synapse.org/#!Synapse:syn2862345) project. MEP-LINCS uses immunofluorescent imaging to interogate cellular responses to different microenvironments and drugs. A microenvironment perturbation or MEP is a combination of a spot of insoluble extracellular matrix proteins with media containing growth factors, ctyokines, ligands and drugs.
-  
-  This vignette loads one 8 well plate of raw data and its metadata from the Synapse website, preprocesses them for downstream analysis, summarizes them to the spot level and displays some Quality Assessment figures. 
-  
+
+###Introduction
+  The MEMA package provides functions to preprocess, QA, analyze and explore data from the National Institute of Health's  [MEP-LINCS](https://www.synapse.org/#!Synapse:syn2862345) project. MEP-LINCS uses immunofluorescent imaging to interogate cellular responses to different microenvironments and drugs. A microenvironment perturbation or MEP is a combination of a spot of insoluble extracellular matrix proteins with media containing growth factors, ctyokines, ligands and drugs.
+
+  This vignette is based on the raw data from the MEP-LINCS experiment that uses Human Epithelial Mammary Cells (HMEC) from a healthy 19 year old woman, cell line HMEC240L. The vignette loads one 8 well plate of raw data and its metadata from the Synapse website, preprocesses them for downstream analysis, summarizes them to the spot level and displays some Quality Assessment figures. 
+ 
+###Setup 
   We start with loading the necessary packages.
 
   
@@ -26,27 +28,28 @@ library(ggplot2)
 
 ```
 
-
-  This vignette is based on the raw data from the MEP-LINCS experiment that uses Human Epethelial Mammary Cells (HMEC) from a healthy 19 year old woman, cell line HMEC240L. The first step is to provide login credentials to Synapse [need explanation of account and hiding credentials]
+###Synpase Login
+  The first step is to provide login credentials to Synapse from a configuration file previously stored in the default location “~/.synapseConfig”. An alternative is to provde a Synapse username and password as arguments in this command. More information about logging into and using Synapse is available at http://docs.synapse.org/articles/getting_started.html#logging-into-synapse.  
   
 ```{r login}
 suppressMessages(synapseLogin())
 ```
 
+###Download Metadata
   Each plate in the dataset has a unique ID that is encoded in a barcode label attached to the plate. We process each plate independently enabling sequential processing on smaller systems and parallel processing on larger systems. 
   
-  We next define a query that uses file annotations to locate the plate's metadata on Synapse. We run the query and use the results to download the metadata to local file.
+  We next define a query that uses file annotations to locate the plate's metadata on Synapse. We run the query and use the results to download the metadata to a local file.
 
 ```{r getMetadataFromSynapse}
 
-barcode <- "LI8X00641"
+barcode <- "LI8X00651"
 metadataq <- sprintf("select id from syn8466225 WHERE DataType='Metadata' AND Barcode='%s'",barcode)
 metadataTable <- synTableQuery(metadataq, verbose=FALSE)@values
 metadataFiles <- lapply(metadataTable$id, synGet)
 metadataFiles <- list(annotMetadata=getFileLocation(metadataFiles[[1]]))
 ```
 
-  Next we read the and process the metadata.
+  Next we read and process the metadata.
   
 ```{r readAndProcessMetadata}
 
@@ -60,10 +63,11 @@ metadata <- getMetadata(metadataFiles, useAnnotMetadata = TRUE)
 head(metadata[,.(Barcode, Well, Spot, Ligand, ECMp, CellLine, StainingSet)])
 ```
 <br>
-  
-  In a similar fashion, we create a query to identify the raw data files on Synapse, run the query and use the results to download all of the raw data files.  Annotations such as the barcode, data level, the file name and its local path are saved in a data.frame.    
 
-```{r getRawDataFrom Synapse}
+###Download Raw Data  
+  In a similar fashion, we create a query to identify the raw data files on Synapse, run the query and use the results to download all of the raw data files.  Annotations such as the barcode, data level, the file name and its local path are saved in the dataBWInfo data.frame.    
+
+```{r getRawDataFromSynapse}
 
 q <- sprintf("select id,name,Barcode,Level,Well,StainingSet,Location from syn7800478 WHERE Level='0' AND Barcode='%s'",
              barcode)
@@ -89,14 +93,16 @@ dtL <- getCPData(dataBWInfo = dataBWInfo, verbose=FALSE)
 head(dtL[[1]][,.(Nuclei_CP_Intensity_MedianIntensity_Dapi,Nuclei_CP_AreaShape_Area)])
 ```
 
-  We next filter out debris, removing data from the datasets.  
+###Filter Debris and Clusters
+  We next filter out rows that are small debris or large multicell clusters that did not segment properly.
   
 ```{r cleanAndProcess}
 dtL <- lapply(dtL, function(dt){
   filterObjects(dt,nuclearAreaThresh = 50, nuclearAreaHiThresh = 4000)})
 ```
 
-  Each spot in a MEMA has the potential to grow a population of cells that interact in a heterogeneous manner. The following operations add population level data for cell locations, median-centered intensities and neighborhoods.  
+###Add Population Information
+  Each spot in a MEMA has the potential to grow a population of heterogeneous cells. The following operations add population level data for cell locations, median-centered intensities and neighborhood information that can be used to quantify the populatoin's heterogeneity.  
   
 ```{r addDerivedFeatures}
 # Add local XY and polar coordinates
@@ -109,20 +115,23 @@ dtL <- lapply(dtL,spotNormIntensities)
 dtL <- lapply(dtL, calcAdjacency)
 ```
 
-  The raw data is next merged with its metadata and stored in one cell level data.table.  
+###Merge All Data and Metadata
+  The raw data is next merged with its metadata and data for all wells in the plate are stored in one cell level data.table.  
   
 ```{r mergeDataAndMetadata}
 
 cDT <- merge(rbindlist(dtL),metadata,by=c("Barcode","Well","Spot"))
 ```
-  
-  Depending on the staining set, cells can be gated and labeled. For instance, the canonical total DAPI histogram is bimodal with peaks at the G0/G1 and G2 populations. This signal is autogated by setting a threshold between the peaks and labeling cells as 2n or 4n DNA. If it is in the staining set, the EdU signal is also autogated and the cells above the threshold are labled as EdU positive.  
+
+###Gate Cells   
+  Depending on the staining set, cells can be gated and labeled. For instance, in unperturbed population the  total DAPI histogram is bimodal with peaks at the G0/G1 and G2 populations. This signal is autogated by setting a threshold between the peaks and labeling cells as 2n or 4n DNA. If it is in the staining set, the EdU signal is also autogated and the cells above the threshold are labled as EdU positive.  
   
 ```{r gate}
 # Gate cells where possible
 cDT <- gateCells(cDT)
 ```
 
+###View DNA Distrbutions
   The histogram of the total DAPI signal in the collagen 1 spots is used to assess the quality of the DAPI staining. In unperturbed cells, the disturbution is expected to have its largest peak at the DNA 2n population and a smaller peak at the 4n population.
   
 ```{r DNAHistogram, fig.width=6, fig.height=4}
@@ -143,7 +152,8 @@ binwidth=.04
 
 
 ```
-  
+
+###Count Cells at Each Spot  
   The next steps prepare for summarizing the cell level data to the spot level. First, the cells at each spot are counted.  
   
 ```{r preprocessLevel2}
@@ -151,6 +161,7 @@ cDT <- cDT[,Spot_PA_SpotCellCount := .N,by="Barcode,Well,Spot"]
 
 ```
 
+###Calculate Gated Populations
   Signals can be gated into binary or multi-variate gates. MEMA data always includes DAPI staining of the DNA in the nuclei so this signal is always present. Other signals depend on the staining set. After gating, the proportion of cells in the gates are calculated and added to the data.  
   
 ```{r addProportions}
@@ -167,6 +178,7 @@ if(length(gatedSignals)>0){
 }
 ```
 
+###Summarize to Spot Level
   The next step is to summarize the cell level data to the spot level. For some of the signals, the standard error of the mean is calculated so that error bars of the replicates can be displayed. 
 
 ```{r summarizeToSpot}
@@ -203,5 +215,5 @@ plotSCCHeatmapsQAHistograms(dt, barcode,lthresh = 0.6)
 
 ```
 
-  We now have spot level data with its metadata. In the MEP-LINCS Preprocessing Pipeline, this data is stored on Synapse or a local server as Level 2 data. The rest of the preprocessing and analysis is in another vignette in the MEMA package.  
+  We now have spot level data with its metadata. In the MEP-LINCS Preprocessing Pipeline, this data is stored on Synapse or a local server as Level 2 data. The rest of the preprocessing and analysis is in the Preprocess-Level3and4-vignette.html in the MEMA package.  
 
