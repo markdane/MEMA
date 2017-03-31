@@ -145,12 +145,13 @@ processan2omero <- function (fileName) {
 #' @param barcodePath The path to the file named barcode_imageIDs.tsv
 #' @return a datatable with WellIndex, ArrayRow, ArrayColumn and ImageID columns
 #' @export
-getOmeroIDs <- function(path, barcode){
-  dt <- fread(paste0(path, "/",barcode, "_imageIDs.tsv"))[,list(WellName,Row,Column,ImageID)]
+getOmeroIDs <- function(path){
+  dt <- fread(path)[,list(WellName,Row,Column,ImageID)]
   #Extract well index and convert to alphanumeric label
   dt[,WellIndex := as.integer(gsub(".*_Well","",WellName))]
   setnames(dt,"Row","ArrayRow")
   setnames(dt,"Column","ArrayColumn")
   dt[,WellName := NULL]
+  message(nrow(dt))
   return(dt)
 }
