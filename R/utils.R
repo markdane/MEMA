@@ -377,12 +377,8 @@ getBarcodes <- function(studyName, synId='syn8440875'){
 #' @return A datatable with the annotated data for all plates in the study. Any data for fiducials and 
 #' blank spots is filtered out.
 #' @export
-getSpotLevelData <- function(studyName, path){
-  slDT <- getBarcodes(studyName) %>%
-    lapply(function(barcode, path){
-      sd <- fread(paste0(path,"/",barcode,"/Analysis/",barcode,"_Level2.tsv"))
-    }, path=path) %>%
-    rbindlist()
+getSpotLevelData <- function(paths){
+  slDT <- lapply(paths, fread) %>% rbindlist()
   slDT$BW <- paste(slDT$Barcode,slDT$Well,sep="_")
   slDT <- slDT[!grepl("fiducial|Fiducial|gelatin|blank|air|PBS",slDT$ECMp),]
   return(slDT)
