@@ -356,11 +356,11 @@ cleanColumnNames<-function(dt){
 #' @param studyName Character string of the study name
 #' @return Barcodes of the plates in the study
 #' @export
-getBarcodes <- function(studyName){
+getBarcodes <- function(studyName, synId='syn8440875'){
   library(synapseClient)
   
   synapseLogin()
-  barcodes <- synGet("syn8440875") %>%
+  barcodes <- synGet(synId) %>%
     synapseClient::getFileLocation() %>%
     data.table::fread(check.names = TRUE) %>%
     dplyr::filter(StudyName==str_to_lower(studyName)) %>%
