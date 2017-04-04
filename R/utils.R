@@ -356,11 +356,11 @@ cleanColumnNames<-function(dt){
 #' @param studyName Character string of the study name
 #' @return Barcodes of the plates in the study
 #' @export
-getBarcodes <- function(studyName){
+getBarcodes <- function(studyName, synId='syn8440875'){
   library(synapseClient)
   
   synapseLogin()
-  barcodes <- synGet("syn8440875") %>%
+  barcodes <- synGet(synId) %>%
     synapseClient::getFileLocation() %>%
     data.table::fread(check.names = TRUE) %>%
     dplyr::filter(StudyName==str_to_lower(studyName)) %>%
@@ -377,12 +377,8 @@ getBarcodes <- function(studyName){
 #' @return A datatable with the annotated data for all plates in the study. Any data for fiducials and 
 #' blank spots is filtered out.
 #' @export
-getSpotLevelData <- function(studyName, path){
-  slDT <- getBarcodes(studyName) %>%
-    lapply(function(barcode, path){
-      sd <- fread(paste0(path,"/",barcode,"/Analysis/",barcode,"_Level2.tsv"))
-    }, path=path) %>%
-    rbindlist()
+getSpotLevelData <- function(paths){
+  slDT <- lapply(paths, fread) %>% rbindlist()
   slDT$BW <- paste(slDT$Barcode,slDT$Well,sep="_")
   slDT <- slDT[!grepl("fiducial|Fiducial|gelatin|blank|air|PBS",slDT$ECMp),]
   return(slDT)
