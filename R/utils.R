@@ -372,8 +372,7 @@ getBarcodes <- function(studyName, synId='syn8440875'){
 
 #' Get the spot level data for a study
 #' 
-#' @param studyName The name of a study that contains data from one or more plates
-#' @param path The path to the directory that contains the barcode level subdirectories
+#' @param paths The paths to the spot level files
 #' @return A datatable with the annotated data for all plates in the study. Any data for fiducials and 
 #' blank spots is filtered out.
 #' @export
