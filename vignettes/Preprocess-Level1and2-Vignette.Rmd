@@ -29,7 +29,7 @@ library(ggplot2)
 ```
 
 ###Synpase Login
-  The first step is to provide login credentials to Synapse from a configuration file previously stored in the default location “~/.synapseConfig”. An alternative is to provde a Synapse username and password as arguments in this command. More information about logging into and using Synapse is available at http://docs.synapse.org/articles/getting_started.html#logging-into-synapse.  
+  The first step is to provide login credentials to Synapse from a configuration file previously stored in the default location “~/.synapseConfig”. An alternative is to provide a Synapse username and password as arguments in this command. More information about logging into and using Synapse is available at http://docs.synapse.org/articles/getting_started.html#logging-into-synapse.  
   
 ```{r login}
 suppressMessages(synapseLogin())
