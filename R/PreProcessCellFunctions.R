@@ -162,7 +162,7 @@ getMetadata <- function(metadataFiles, useAnnotMetadata=TRUE){
 getCPData <- function(dataBWInfo, curatedOnly=TRUE, curatedCols= "ImageNumber|ObjectNumber|AreaShape|_MedianIntensity_|_IntegratedIntensity_|_Center_|_PA_|Texture", verbose=FALSE){
   dtL <- lapply(unique(dataBWInfo$Well), function(well){
     if(verbose) message(paste("Reading and annotating data for",barcode, well,"\n"))
-    nuclei <- convertColumnNames(fread(dataBWInfo$Path[grepl("Nuclei",dataBWInfo$Location)&grepl(well,dataBWInfo$Well)], verbose=verbose, showProgress=FALSE))
+    nuclei <- convertColumnNames(fread(dataBWInfo$Path[grepl("Nuclei",dataBWInfo$Location)&grepl(well,dataBWInfo$Well)], verbose=FALSE, showProgress=FALSE))
     if (curatedOnly) nuclei <- nuclei[,grep(curatedCols,colnames(nuclei)), with=FALSE]
     setnames(nuclei,paste0("Nuclei_",colnames(nuclei)))
     setnames(nuclei,"Nuclei_CP_ImageNumber","Spot")
@@ -170,7 +170,7 @@ getCPData <- function(dataBWInfo, curatedOnly=TRUE, curatedCols= "ImageNumber|Ob
     setkey(nuclei,Spot,ObjectNumber) 
     
     if(any(grepl("Cells",dataBWInfo$Location)&grepl(well,dataBWInfo$Well))){
-      cells <- convertColumnNames(fread(dataBWInfo$Path[grepl("Cells",dataBWInfo$Location)&grepl(well,dataBWInfo$Well)], verbose=verbose, showProgress=FALSE))
+      cells <- convertColumnNames(fread(dataBWInfo$Path[grepl("Cells",dataBWInfo$Location)&grepl(well,dataBWInfo$Well)], verbose=FALSE, showProgress=FALSE))
       if (curatedOnly) cells <- cells[,grep(curatedCols,colnames(cells)), with=FALSE]
       setnames(cells,paste0("Cells_",colnames(cells)))
       setnames(cells,"Cells_CP_ImageNumber","Spot")
@@ -179,7 +179,7 @@ getCPData <- function(dataBWInfo, curatedOnly=TRUE, curatedCols= "ImageNumber|Ob
     } 
     
     if(any(grepl("Cytoplasm",dataBWInfo$Location)&grepl(well,dataBWInfo$Well))){
-      cytoplasm <- convertColumnNames(fread(dataBWInfo$Path[grepl("Cytoplasm",dataBWInfo$Location)&grepl(well,dataBWInfo$Well)], verbose=verbose, showProgress=FALSE))
+      cytoplasm <- convertColumnNames(fread(dataBWInfo$Path[grepl("Cytoplasm",dataBWInfo$Location)&grepl(well,dataBWInfo$Well)], verbose=FALSE, showProgress=FALSE))
       if (curatedOnly) cytoplasm <- cytoplasm[,grep(curatedCols,colnames(cytoplasm)), with=FALSE]
       setnames(cytoplasm,paste0("Cytoplasm_",colnames(cytoplasm)))
       setnames(cytoplasm,"Cytoplasm_CP_ImageNumber","Spot")
