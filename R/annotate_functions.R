@@ -142,7 +142,7 @@ processan2omero <- function (fileName) {
 #' 
 #' Adds Omero image IDs based on the WelIndex values
 #' 
-#' @param barcodePath The path to the file named barcode_imageIDs.tsv
+#' @param path The path to the file named barcode_imageIDs.tsv
 #' @return a datatable with WellIndex, ArrayRow, ArrayColumn and ImageID columns
 #' @export
 getOmeroIDs <- function(path){
