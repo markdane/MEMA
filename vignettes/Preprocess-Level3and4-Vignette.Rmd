@@ -22,19 +22,19 @@ vignette: >
 library(MEMA)
 library(RUVnormalize)
 library(ruv)
-library(synapseClient)
+suppressPackageStartupMessages(library(synapseClient))
 library(parallel)
 library(stringr)
 suppressPackageStartupMessages(library(dplyr))
 library(ggplot2)
-library(plotly)
+suppressPackageStartupMessages(library(plotly))
 library(d3heatmap)
 library(RColorBrewer)
 
 ```
 
 ###Synpase Login
-  The first step is to provide login credentials to Synapse from a configuration file previously stored in the default location “~/.synapseConfig”. An alternative is to provde a Synapse username and password as arguments in this command. More information about logging into and using Synapse is available at http://docs.synapse.org/articles/getting_started.html#logging-into-synapse.  
+  The first step is to provide login credentials to Synapse from a configuration file previously stored in the default location “~/.synapseConfig”. An alternative is to provide a Synapse username and password as arguments in this command. More information about logging into and using Synapse is available at http://docs.synapse.org/articles/getting_started.html#logging-into-synapse.  
 
 ```{r login}
 suppressMessages(synapseLogin())
@@ -46,8 +46,19 @@ Each study in the MEP-LINCS dataset has a unique name that identifies its set of
 We first read a file on Synpase that contains the study to plate barcode assignments. Then we get the spot level data for all plates in the study.  
 
 ```{r getLevel2DataFromSynapse}
-###Debug Reading from local server to be replaced with reading from Synapse.
-slDT <- getSpotLevelData(studyName="hmec240l_ss4", path="/lincs/share/lincs_user")
+studyName <- "HMEC122L_SS4"
+q <- sprintf("select id from syn7494072 WHERE Level='2' AND Study='%s'", studyName)
+level2File <- synTableQuery(q)
+dataSynID <- level2File@values$id
+
+# Download level 3 file or get from cache if already downloaded
+res <- lapply(dataSynID, synGet)
+
+# Get the path on disk to the file
+dataFilePath <- unlist(lapply(res, getFileLocation))
+
+#Read level 2 data
+slDT <- getSpotLevelData(dataFilePath)
 ```
 
 ###Normalization
@@ -55,7 +66,7 @@ We use RUV and loess methods to normalize the data. The first step is to identif
 
 ```{r normalizeLevel2Data}
 
-signalsMinimalMetadata <- grep("_SE",grep("_CP_|_PA_|Barcode|^Well$|^Spot$|^PrintSpot$|^Ligand$|^ECMp$|^Drug$|^Drug1Conc$|^ArrayRow$|^ArrayColumn$|^CellLine$",colnames(slDT), value=TRUE), value=TRUE, invert=TRUE)
+signalsMinimalMetadata <- grep("_SE",grep("_SpotCell|EdU|QA|Barcode|^Well$|^Spot$|^PrintSpot$|^Ligand$|^ECMp$|^Drug$|^Drug1Conc$|^ArrayRow$|^ArrayColumn$|^CellLine$",colnames(slDT), value=TRUE), value=TRUE, invert=TRUE)
 
 #Define the maximum number of factors to be removed by the RUV normalization
 k <- 256
