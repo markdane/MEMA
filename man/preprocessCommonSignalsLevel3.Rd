@@ -4,13 +4,10 @@
 \alias{preprocessCommonSignalsLevel3}
 \title{Normalize the common signals across studies}
 \usage{
-preprocessCommonSignalsLevel3(studyNameList, path, k = 256L,
-  verbose = FALSE)
+preprocessCommonSignalsLevel3(paths, k = 256L, verbose = FALSE)
 }
 \arguments{
-\item{studyNameList}{A list of study names}
-
-\item{path}{the path to the level 2 data directories}
+\item{paths}{A list of paths to level 2 data, each element is a different study.}
 
 \item{k}{The number of factors to use in the RUV normalization}
 

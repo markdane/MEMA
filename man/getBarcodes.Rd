@@ -4,7 +4,7 @@
 \alias{getBarcodes}
 \title{Get barcodes from the Synapse Plate Tracker files}
 \usage{
-getBarcodes(studyName)
+getBarcodes(studyName, synId = "syn8440875")
 }
 \arguments{
 \item{studyName}{Character string of the study name}

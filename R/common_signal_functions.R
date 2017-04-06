@@ -1,16 +1,13 @@
 #' Normalize the common signals across studies
 #' 
-#' @param studyNameList A list of study names
-#' @param path the path to the level 2 data directories
+#' @param paths A list of paths to level 2 data, each element is a different study.
 #' @param k The number of factors to use in the RUV normalization
 #' @param verbose A logical for progress messages
 #' @return A datatable of raw and normalized spot level data with its metadata
 #' @export
-preprocessCommonSignalsLevel3 <- function(studyNameList, path, k=256L, verbose=FALSE){
+preprocessCommonSignalsLevel3 <- function(paths, k=256L, verbose=FALSE){
   #Read in the level 2 datasets
-  l2List <- lapply(studyNameList, function(studyName, path){
-    dt <- getSpotLevelData(studyName, path)
-  }, path=path)
+  l2List <- lapply(paths, getSpotLevelData)
   # Combine the common signals into a datatable
   l2 <- combineSignals(l2List)
   #Clean the common signal datatable
