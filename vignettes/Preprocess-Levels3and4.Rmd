@@ -1,0 +1,188 @@
+---
+title: "Preprocess and QA MEMA Level 3 and 4 Data"
+author: "Mark Dane"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Preprocess and QA MEMA Cell and Spot Level Data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+###Introduction
+  The MEMA package provides functions to preprocess, QA, analyze and explore level 3 and 4 data from the National Institute of Health's  [MEP-LINCS](https://www.synapse.org/#!Synapse:syn2862345) project. MEP-LINCS uses immunofluorescent imaging to interogate cellular responses to different microenvironments and drugs. A microenvironment perturbation or MEP is a combination of a spot of insoluble extracellular matrix proteins with media containing growth factors, ctyokines, ligands and drugs.
+  
+  This vignette is based on the summarized data from the MEP-LINCS experiment that uses Human Epithelial Mammary Cells (HMEC) from a healthy 19 year old woman, cell line HMEC240L.This vignette loads one study of eight 8 well plates of level 2 data from the Synapse website, normalizes them, summarizes them to the replicate level and displays some quality assessment and analysis figures. 
+  
+###Setup
+  We start with loading the necessary packages.
+  
+  
+```{r setup}
+library(MEMA)
+library(RUVnormalize)
+library(ruv)
+suppressPackageStartupMessages(library(synapseClient))
+library(parallel)
+library(stringr)
+suppressPackageStartupMessages(library(dplyr))
+library(ggplot2)
+suppressPackageStartupMessages(library(plotly))
+library(d3heatmap)
+library(RColorBrewer)
+
+```
+
+###Synpase Login
+  The first step is to provide login credentials to Synapse from a configuration file previously stored in the default location “~/.synapseConfig”. An alternative is to provide a Synapse username and password as arguments in this command. More information about logging into and using Synapse is available at http://docs.synapse.org/articles/getting_started.html#logging-into-synapse.  
+
+```{r login}
+suppressMessages(synapseLogin())
+```
+
+###Get Spot Level Data
+Each study in the MEP-LINCS dataset has a unique name that identifies its set of plates. 
+
+We first read a file on Synpase that contains the study to plate barcode assignments. Then we get the spot level data for all plates in the study.  
+
+```{r getLevel2DataFromSynapse}
+studyName <- "HMEC122L_SS4"
+q <- sprintf("select id from syn7494072 WHERE Level='2' AND Study='%s'", studyName)
+level2File <- synTableQuery(q)
+dataSynID <- level2File@values$id
+
+# Download level 3 file or get from cache if already downloaded
+res <- lapply(dataSynID, synGet)
+
+# Get the path on disk to the file
+dataFilePath <- unlist(lapply(res, getFileLocation))
+
+#Read level 2 data
+slDT <- getSpotLevelData(dataFilePath)
+```
+
+###Normalization
+We use RUV and loess methods to normalize the data. The first step is to identify which signals to normalize and include them with some of their metadata. We then normalize the data.  
+
+```{r normalizeLevel2Data}
+
+signalsMinimalMetadata <- grep("_SE",grep("_SpotCell|EdU|QA|Barcode|^Well$|^Spot$|^PrintSpot$|^Ligand$|^ECMp$|^Drug$|^Drug1Conc$|^ArrayRow$|^ArrayColumn$|^CellLine$",colnames(slDT), value=TRUE), value=TRUE, invert=TRUE)
+
+#Define the maximum number of factors to be removed by the RUV normalization
+k <- 256
+#RUVLoess normalize all signals
+nDT <- normRUVLoessResiduals(slDT[,signalsMinimalMetadata, with = FALSE], k)
+nDT$NormMethod <- "RUVLoessResiduals"
+slDT$k <- k
+slDT <- merge(slDT, nDT, by = c("BW","PrintSpot"))
+```
+
+###Add QA Flags
+  We next add QA flags that can be used in downstream analysis to filter out lower quality data. This is now the MEP-LINCS level 3 data where every row is a spot and the columns include raw and normalized data along with metadata.  
+
+```{r QASpotlevelData}
+#Add QA flags to the data
+slDT <- QASpotLevelData(slDT, lowSpotCellCountThreshold=5,
+                        lowRegionCellCountThreshold = 0.4,
+                        lowWellQAThreshold = .7)
+```
+
+  The first few rows of some selected features of the level 3 data are shown in the table below.
+
+```{r showLevel3}
+head(slDT[,.(Barcode, Well, Spot, MEP, Spot_PA_SpotCellCount, Spot_PA_SpotCellCountNorm)])
+
+```
+
+###Summarize the Replicates
+  We next median summarize the replicates and calculate the standard errors. This becomes the level 4 data.  
+
+```{r createLevel4}
+#Summarize to the MEP_Drug level
+mepDT <- preprocessLevel4(slDT,seNames=c("DNA2N","SpotCellCount","EdU","MitoTracker","KRT","Lineage","Fibrillarin"))
+```
+
+  The final step is to add multiple barcode values to replicates that were in different plates and flag values that came from a low number of replicates.   
+  
+```{r QALevel4}
+#Add in the barcodes for each MEP_Drug
+mepDT <- addBarcodes(dt3 = slDT, dt4 = mepDT)
+# Add a QA flag for spots with few replicates
+mepDT$QA_LowReplicateCount <- mepDT$Spot_PA_ReplicateCount < 3
+```
+
+  The first few rows of a few values in the level 4 data are shown below.  
+  
+```{r showLevel4}
+head(mepDT[,.(Barcode, MEP, Spot_PA_SpotCellCount, Spot_PA_SpotCellCountNorm)])
+```
+
+###Spot Cell Count Boxplots
+Boxplots of the spot cell counts show the values stratified by plate and well. The blue line shows the dataset median. Each boxplot summarizes data from ~700 spots. This figure is useful for QA of the experiment where we look for plate-level effects. 
+
+```{r SCCBoxplots, fig.width=8, fig.height=5}
+
+dt <- mepDT[,list(Barcode,Ligand,Spot_PA_SpotCellCount, Spot_PA_SpotCellCountNorm)]
+dt <- melt(dt,id.vars=c("Barcode","Ligand"),measure.vars=c("Spot_PA_SpotCellCount","Spot_PA_SpotCellCountNorm"), variable.name = "Processed",value.name = "SpotCellCount", variable.factor = FALSE)
+dt$Processed[!grepl("Norm",dt$Processed)] <- "Raw"
+dt$Processed[grepl("Norm",dt$Processed)] <- "Normalized"
+dt$Processed <- factor(dt$Processed,levels = c("Raw","Normalized"))
+
+p <- ggplot(dt, aes(x = reorder(Ligand, SpotCellCount, FUN=median), y = SpotCellCount, colour = Barcode))+geom_boxplot()+
+  ggtitle(paste("Raw and Normalized Spot Cell Count by Ligand"))+
+  xlab("")+ylab("")+
+  geom_hline(yintercept = median(dt$SpotCellCount), colour="blue", alpha=.5)+
+  facet_wrap(~Processed, ncol=1)+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=rel(.8)), axis.text.y = element_text(angle = 0, vjust = 0.5, hjust=1, size=rel(1)), plot.title = element_text(size = rel(1)),legend.text=element_text(size = rel(.5)),legend.title=element_text(size = rel(.8)))
+p
+
+```
+
+
+##Spot Cell Count Analysis
+The spot cell count analysis identifies MEPs with extreme population sizes. The normalized spot cell counts in the plot below are summarized by the median and standard error of their replicates. Hovering over the the interactive plot below shows the MEP identities. Clicking and dragging over a section of the plot will zoom into the selected location. Double clicking on the zooomed plot will restore the original plot.
+
+
+```{r MEPSbySpotCellCount, fig.width=8, fig.height=5}
+
+dt <- mepDT
+
+p <- ggplot(dt, aes(x =reorder(MEP, Spot_PA_SpotCellCountNorm), y = Spot_PA_SpotCellCountNorm))+
+  geom_errorbar(aes(ymin=Spot_PA_SpotCellCountNorm-Spot_PA_SpotCellCountNorm_SE, ymax=Spot_PA_SpotCellCountNorm+Spot_PA_SpotCellCountNorm_SE), width=.01, colour="black") +
+  xlab("MEP")+ylab("Normalized Spot Cell Count")+
+  theme( axis.text.x=element_blank(), axis.ticks=element_blank(),  panel.grid.major = element_blank())+
+  ggtitle("MEPs Ordered by Normalized Spot Cell Count")
+
+p <- p + geom_point(aes(y=Spot_PA_SpotCellCountNorm),colour = "darkblue", alpha = .5)
+
+ggplotly(p)
+```
+
+
+###Normalized Spot Cell Counts
+  The interactive heatmaps below are arranged by unsupervised clustering of the rows and columns and colored by the normalized spot cell count. Clicking and dragging across any subsection will zoom in on that section. Double clicking on the zoomed image will return to the full heatmap.  
+
+```{r SCCHeatmapFull, fig.width=8, fig.height=5}
+#Cast to get ligands into columns
+df <- dcast(data.frame(mepDT[,list(ECMp,Ligand,Spot_PA_SpotCellCountNorm,Barcode)]),ECMp~Ligand, value.var = "Spot_PA_SpotCellCountNorm",fun=median)
+
+rownames(df) <- df$ECMp
+df <- df[,!grepl("ECMp",names(df))]
+
+hmcols<-colorRampPalette(c("blue","white","red"))(16)
+try(d3heatmap(dfZoom(df, .05, .95), colors=hmcols, xaxis_font_size="6pt", yaxis_font_size="5pt"), TRUE)
+
+```
+
+```{r edUNormLigandBoxplots, fig.width=8, fig.height=5}
+p <- ggplot(mepDT, aes(x=Ligand, y=Nuclei_PA_Gated_EdUPositiveProportionNorm))+
+  geom_boxplot(outlier.colour = NA, fill=NA)+
+  geom_jitter(size=rel(.4))+
+  #coord_cartesian(ylim = c(0,.5))+
+  guides(colour=FALSE)+
+  xlab("Ligand")+ylab("Normalized EdU+")+
+  ggtitle("MEP EdU+ Response by Ligand")+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=rel(.7)), axis.text.y = element_text(angle = 0, vjust = 0.5, hjust=1, size=rel(1)), plot.title = element_text(size = rel(1)),legend.text=element_text(size = rel(1)),legend.title=element_text(size = rel(1)))
+
+print(p)
+```
