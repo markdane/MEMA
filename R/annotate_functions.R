@@ -87,7 +87,6 @@ processan2omero <- function (fileName) {
   wi <- data.table(Well = unique(dt$Well), WellIndex = 1:length(unique(dt$Well)))
   dt <- merge(dt,wi)
   #Rename to preprocessing pipeline variable names
-  setnames(dt,"OSpot","Spot")
   setnames(dt,"PlateID","Barcode")
   dt$EndpointDAPI <- dt[["395nm"]]
   dt$Endpoint488 <- dt[["488nm"]]
