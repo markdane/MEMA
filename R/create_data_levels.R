@@ -195,7 +195,7 @@ preprocessLevel4 <- function(dt, seNames=NULL){
   library(magrittr)
   #Add a count of replicates
   dt <- dt[,Spot_PA_ReplicateCount := .N,by="Ligand,ECMp,Drug,CellLine,Drug1Conc"]
-  rawSignalNames <- grep("_SE",grep("Log2|Logit|_PA_|Intensity|AreaShape",colnames(dt), value=TRUE), value=TRUE, invert=TRUE)
+  rawSignalNames <- grep("_SE",grep("Log2|Logit|_PA_|Intensity|AreaShape|Texture",colnames(dt), value=TRUE), value=TRUE, invert=TRUE)
   l4Signals<- dt[,lapply(.SD, numericMedian), by="Ligand,ECMp,Drug,Drug1Conc,CellLine", .SDcols=rawSignalNames]
   
   #Use seNames to select the parameters that get SE values
