@@ -81,7 +81,10 @@ normRUVLoessResiduals <- function(dt, k){
   #Backtransform from log2 and logit values
   #log transform all intensity and areaShape values
   log2Names <- grep("Log2",colnames(signalDT), value=TRUE)
-  btLog2 <- function(x) x^2
+  btLog2 <- function(x){
+    x[x<0] <- 0
+    2^x
+  }
   dtLog <- signalDT[,lapply(.SD,btLog2),.SDcols=log2Names]
   logitNames <- grep("Logit",colnames(signalDT), value=TRUE)
   dtLogit <- signalDT[,lapply(.SD,plogis),.SDcols=logitNames]
