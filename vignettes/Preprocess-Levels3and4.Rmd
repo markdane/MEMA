@@ -46,7 +46,7 @@ Each study in the MEP-LINCS dataset has a unique name that identifies its set of
 We first read a file on Synpase that contains the study to plate barcode assignments. Then we get the spot level data for all plates in the study.  
 
 ```{r getLevel2DataFromSynapse}
-studyName <- "HMEC122L_SS4"
+studyName <- "HMEC240L_SS4"
 q <- sprintf("select id from syn7494072 WHERE Level='2' AND Study='%s'", studyName)
 level2File <- synTableQuery(q)
 dataSynID <- level2File@values$id
