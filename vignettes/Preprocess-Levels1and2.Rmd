@@ -7,6 +7,7 @@ vignette: >
   %\VignetteIndexEntry{Preprocess and QA MEMA Cell and Spot Level Data}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
+  
 ---
 
 ###Introduction
@@ -242,3 +243,11 @@ plotSCCHeatmapsQAHistograms(dt, barcode,lthresh = 0.6)
 ```
 
   We now have spot level data with its metadata. In the MEP-LINCS Preprocessing Pipeline, this data is stored on Synapse or a local server as Level 2 data. The rest of the preprocessing and analysis is in the Preprocess-Level3and4-vignette.html in the MEMA package.  
+  
+  
+###Session Info
+This vignette was created with the following session info.
+
+```{r}
+sessionInfo()
+```
