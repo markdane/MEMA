@@ -1,5 +1,5 @@
 ---
-title: "Preprocess and QA MEMA Cell and Spot Level Data"
+title: "Preprocess and QA MEMA Cell (level 1) and Spot (level 2) Data"
 author: "Mark Dane"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
@@ -113,6 +113,9 @@ dtL <- lapply(dtL,spotNormIntensities)
 
 # Add adjacency values
 dtL <- lapply(dtL, calcAdjacency)
+
+#Clean up legacy issues in column names and some values
+dtL <- lapply(dtL, cleanLegacyIssues)
 ```
 
 ###Merge All Data and Metadata
@@ -153,6 +156,15 @@ binwidth=.04
 
 ```
 
+###Level 1 Data
+  We now have the level 1 data where each row in the dataset is a cell. The first few rows of some selected features of the level 1 data are shown in the table below.  
+  
+ 
+```{r showLevel1}
+head(cDT[,.(ObjectNumber, Barcode, Well, Spot, MEP, Nuclei_CP_Intensity_IntegratedIntensity_Dapi)])
+
+``` 
+
 ###Count Cells at Each Spot  
   The next steps prepare for summarizing the cell level data to the spot level. First, the cells at each spot are counted.  
   
@@ -178,6 +190,7 @@ if(length(gatedSignals)>0){
 }
 ```
 
+
 ###Summarize to Spot Level
   The next step is to summarize the cell level data to the spot level. For some of the signals, the standard error of the mean is calculated so that error bars of the replicates can be displayed. 
 
@@ -193,7 +206,20 @@ if(exists("proportions")) {
 } else {
   spotDT <- signals
 }
+
+#Set a threshold for the loess well level QA Scores
+if(sum(c("ArrayRow","ArrayColumn") %in% colnames(spotDT))==2) spotDT <- QASpotData(spotDT, lthresh = .6)
+
 ```
+
+###Level 2 Data
+  We now have the level 2 data where each row is data from one MEMA spot. The first few rows of some selected features of the level 2 data are shown in the table below.  
+  
+ 
+```{r showLevel2}
+head(spotDT[,.(Barcode, Well, Spot, MEP, Spot_PA_SpotCellCount)])
+
+``` 
 
 ###Quality Assessment
 The variance of the signal in MEMA data comes from biological and technical factors. The technical factors create regions of low cell counts per spot and uneven staining across the array. The goal of the QA pipeline is to quantify the technical factors to identify wells or plates that need to be removed from downstream processing.

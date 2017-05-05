@@ -433,3 +433,25 @@ writeCellLevel <- function(dt,path,barcode, verbose=FALSE){
   fwrite(dt, paste0(path,barcode, "/Analysis/", barcode,"_","Level1.tsv"), sep = "\t", quote=FALSE)
   if(verbose) message(paste("Write time:", Sys.time()-writeTime,"\n"))
 }  
+
+#' Format 96 well plate raw data from the Cell Profiler Pipeline
+#' 
+#' Reformats the metadata for one row of a 96 well plate to match the pipeline. 
+#' The Spot column is converted to an index within each well and a label for the Well is added
+#' to the output data.table
+#' 
+#' @param dt data.table with a Spot column
+#' @param nrArrayRows The number of rows in the printed array
+#' @param nrArrayColumns The number of columns in the printed array
+#' @return A data.table with an alphanumeric Well column and reindexed Spot column
+#' @export
+formatCP96Well <- function(dt, nrArrayRows, nrArrayColumns){
+  nrArraySpots <-nrArrayRows*nrArrayColumns
+  dt$WellIndex <- dt$Spot %/% nrArraySpots +1
+  dt$Spot <- ((dt$Spot-1) %% nrArraySpots)+1
+  dt$Well <-  dt$WellIndex %>%
+    sprintf("%02d",.) %>%
+    paste0(gsub("Row","",dt$Well),.)
+  dt[,WellIndex := NULL]
+  return(dt)
+}
