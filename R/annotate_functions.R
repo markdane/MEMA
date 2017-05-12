@@ -72,7 +72,7 @@ convertColumnNames <- function (DT) {
 #' @return The median of x as a numeric value
 #'
 #'@export
-numericMedian <- function(x) as.numeric(median(x))
+numericMedian <- function(x) as.numeric(median(x, na.rm = TRUE))
 
 
 #' Process the metadata in an an2omero file
@@ -87,7 +87,6 @@ processan2omero <- function (fileName) {
   wi <- data.table(Well = unique(dt$Well), WellIndex = 1:length(unique(dt$Well)))
   dt <- merge(dt,wi)
   #Rename to preprocessing pipeline variable names
-  setnames(dt,"OSpot","Spot")
   setnames(dt,"PlateID","Barcode")
   dt$EndpointDAPI <- dt[["395nm"]]
   dt$Endpoint488 <- dt[["488nm"]]
@@ -118,6 +117,23 @@ processan2omero <- function (fileName) {
   nrArrayRows <- max(dt$ArrayRow)
   nrArrayColumns <- max(dt$ArrayColumn)
   dt$PrintSpot[grepl("B", dt$Well)] <- (nrArrayRows*nrArrayColumns+1)-dt$PrintSpot[grepl("B", dt$Well)]
+  #Add a drug concentration in uM/L
+  ConcFactor <- str_extract(dt$Drug1AnConcUnit,".*_per_.|.molar|volume_percent") %>%
+    sapply(., function(x){
+      switch(x,
+             mmol_per_L = 1e3,
+             umol_per_L = 1,
+             nmol_per_L = 1e-3,
+             pmol_per_L = 1e-6,
+             mmolar = 1e6,
+             umolar = 1e3,
+             nmolar = 1,
+             pmolar = 1e-3,
+             0)
+    })
+  #Error handling for when there is no drug metadata
+  dt$Drug1Conc <- dt$Drug1AnConc*ConcFactor
+  dt$Drug1Conc[is.na(dt$Drug1Conc)] <- 0
   return(dt)
 }
 
@@ -125,16 +141,16 @@ processan2omero <- function (fileName) {
 #' 
 #' Adds Omero image IDs based on the WelIndex values
 #' 
-#' @param barcodePath The path to the file named barcode_imageIDs.tsv
+#' @param path The path to the file named barcode_imageIDs.tsv
 #' @return a datatable with WellIndex, ArrayRow, ArrayColumn and ImageID columns
 #' @export
-getOmeroIDs <- function(barcodePath){
-  barcode <- gsub(".*/","",barcodePath)
-  dt <- fread(paste0(barcodePath,"/Analysis/",barcode,"_imageIDs.tsv"))[,list(WellName,Row,Column,ImageID)]
+getOmeroIDs <- function(path){
+  dt <- fread(path)[,list(WellName,Row,Column,ImageID)]
   #Extract well index and convert to alphanumeric label
   dt[,WellIndex := as.integer(gsub(".*_Well","",WellName))]
   setnames(dt,"Row","ArrayRow")
   setnames(dt,"Column","ArrayColumn")
   dt[,WellName := NULL]
+  message(nrow(dt))
   return(dt)
 }

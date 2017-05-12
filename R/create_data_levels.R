@@ -95,10 +95,10 @@ addSpotProportions <- function(dt){
     #2 KRT5-, KRT19+
     #3 KRT5+, KRT19+
     #Calculate gating proportions for EdU and KRT19
-    dt <- dt[,Cytoplasm_PA_Gated_KRT5RT19NegativeProportion := sum(Cytoplasm_PA_Gated_KRTClass==0)/length(ObjectNumber),by="Barcode,Well,Spot"]
+    dt <- dt[,Cytoplasm_PA_Gated_KRT5KRT19NegativeProportion := sum(Cytoplasm_PA_Gated_KRTClass==0)/length(ObjectNumber),by="Barcode,Well,Spot"]
     dt <- dt[,Cytoplasm_PA_Gated_KRT5NegativeKRT19PositiveProportion := sum(Cytoplasm_PA_Gated_KRTClass==2)/length(ObjectNumber),by="Barcode,Well,Spot"]
-    dt <- dt[,Cells_PA_Gated_KRT5PositiveKRT19NegativeProportion := sum(Cytoplasm_PA_Gated_KRTClass==1)/length(ObjectNumber),by="Barcode,Well,Spot"]
-    dt <- dt[,Cells_PA_Gated_KRT5PositivedKRT19PositiveProportion := sum(Cytoplasm_PA_Gated_KRTClass==3)/length(ObjectNumber),by="Barcode,Well,Spot"]
+    dt <- dt[,Cytoplasm_PA_Gated_KRT5PositiveKRT19NegativeProportion := sum(Cytoplasm_PA_Gated_KRTClass==1)/length(ObjectNumber),by="Barcode,Well,Spot"]
+    dt <- dt[,Cytoplasm_PA_Gated_KRT5PositivedKRT19PositiveProportion := sum(Cytoplasm_PA_Gated_KRTClass==3)/length(ObjectNumber),by="Barcode,Well,Spot"]
   }
   
   if ("Cells_PA_Gated_EdUKRT5Class" %in% colnames(dt)){
@@ -194,29 +194,30 @@ addSpotProportions <- function(dt){
 preprocessLevel4 <- function(dt, seNames=NULL){
   library(magrittr)
   #Add a count of replicates
-  dt <- dt[,Spot_PA_ReplicateCount := .N,by="Ligand,ECMp,Drug,CellLine"]
-  rawSignalNames <- grep("_SE",grep("Log2|Logit|_PA_|Intensity|AreaShape",colnames(dt), value=TRUE), value=TRUE, invert=TRUE)
-  l4Signals<- dt[,lapply(.SD, numericMedian), by="Ligand,ECMp,Drug,CellLine", .SDcols=rawSignalNames]
+  dt <- dt[,Spot_PA_ReplicateCount := .N,by="Ligand,ECMp,Drug,CellLine,Drug1Conc"]
+  rawSignalNames <- grep("_SE",grep("Log2|Logit|_PA_|Intensity|AreaShape|Texture",colnames(dt), value=TRUE), value=TRUE, invert=TRUE)
+  l4Signals<- dt[,lapply(.SD, numericMedian), by="Ligand,ECMp,Drug,Drug1Conc,CellLine", .SDcols=rawSignalNames]
   
   #Use seNames to select the parameters that get SE values
   if(!is.null(seNames)){
     seNamesPattern<-paste(seNames,collapse="|")
     seSignalNames <- grep(seNamesPattern,rawSignalNames,value=TRUE)
-    l4Ses <- dt[,lapply(.SD,se),keyby="Ligand,ECMp,Drug,CellLine", .SDcols=seSignalNames]
+    l4Ses <- dt[,lapply(.SD,se),keyby="Ligand,ECMp,Drug,Drug1Conc,CellLine", .SDcols=seSignalNames]
   } else{
-    l4Ses <- dt[,lapply(.SD,se),keyby="Ligand,ECMp,Drug,CellLine"]
+    l4Ses <- dt[,lapply(.SD,se),keyby="Ligand,ECMp,Drug,Drug1Conc,CellLine"]
   }
   
   #Add _SE to the standard error column names
-  setnames(l4Ses, grep("Ligand|ECMp|Drug|CellLine",colnames(l4Ses), value = TRUE, invert = TRUE), paste0(grep("Ligand|ECMp|Drug|CellLine",colnames(l4Ses), value = TRUE, invert = TRUE),"_SE"))
+  setnames(l4Ses, grep("Ligand|ECMp|Drug|Drug1Conc|CellLine",colnames(l4Ses), value = TRUE, invert = TRUE), paste0(grep("Ligand|ECMp|Drug|Drug1Conc|CellLine",colnames(l4Ses), value = TRUE, invert = TRUE),"_SE"))
   
   #Merge back in the replicate metadata
-  metadataNames <- grep("_SE|Barcode|^BW$|ArrayRow|ArrayColumn|^Well$|^Spot$|^PrintSpot$|^Well_Ligand$|ImageID|QA_|ECMSet|^Row$|^Column$|^Block$|PlateRow|^QAScore$|^ID$",colnames(dt), value=TRUE,invert=TRUE) %>%
+
+  metadataNames <- grep("_SE|Barcode|^BW$|ArrayRow|ArrayColumn|^Well$|WellIndex|^Spot$|^PrintSpot$|^Well_Ligand$|ImageID|QA_|ECMSet|^Row$|^Column$|^Block$|PlateRow|^QAScore$|^ID$|LigandSet|PrintOrder",colnames(dt), value=TRUE,invert=TRUE) %>%
     setdiff(rawSignalNames)
   mdDT <- unique(dt[,metadataNames, with=FALSE])
-  setkey(l4Signals,Ligand,ECMp,Drug,CellLine)
-  setkey(l4Ses,Ligand,ECMp,Drug,CellLine)
-  setkey(mdDT,Ligand,ECMp,Drug,CellLine)
+  setkey(l4Signals,Ligand,ECMp,Drug,Drug1Conc,CellLine)
+  setkey(l4Ses,Ligand,ECMp,Drug,Drug1Conc,CellLine)
+  setkey(mdDT,Ligand,ECMp,Drug,Drug1Conc,CellLine)
   l4DT <- merge(mdDT,merge(l4Signals,l4Ses))
   return(l4DT)
 }#End of preprocesslevel4

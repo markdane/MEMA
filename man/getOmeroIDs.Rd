@@ -4,10 +4,10 @@
 \alias{getOmeroIDs}
 \title{Read in and merge the Omero URLs}
 \usage{
-getOmeroIDs(barcodePath)
+getOmeroIDs(path)
 }
 \arguments{
-\item{barcodePath}{The path to the file named barcode_imageIDs.tsv}
+\item{path}{The path to the file named barcode_imageIDs.tsv}
 }
 \value{
 a datatable with WellIndex, ArrayRow, ArrayColumn and ImageID columns

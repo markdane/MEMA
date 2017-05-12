@@ -4,12 +4,10 @@
 \alias{getSpotLevelData}
 \title{Get the spot level data for a study}
 \usage{
-getSpotLevelData(studyName, path)
+getSpotLevelData(paths)
 }
 \arguments{
-\item{studyName}{The name of a study that contains data from one or more plates}
-
-\item{path}{The path to the directory that contains the barcode level subdirectories}
+\item{paths}{The paths to the spot level files}
 }
 \value{
 A datatable with the annotated data for all plates in the study. Any data for fiducials and 

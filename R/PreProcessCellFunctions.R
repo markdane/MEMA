@@ -1,35 +1,29 @@
 
 #'Read the well metadata from a multi-sheet Excel file
 #'
-#' @param path path to the directory with barcode level subdirectories
-#' @param barcode barcode or plate ID
+#' @param fn full path and file name for the well metadata file
 #' @return a datatable with the well level metadata 
 #' @export 
-getWellMetadata <- function(path, barcode){
-  fn <- dir(paste0(path,barcode,"/Analysis"),pattern = "xlsx",full.names = TRUE)
+getWellMetadata <- function(fn){
   if(!length(fn)==1) stop(paste("There must be 1 xlsx metadata file in the",barcode, "Analysis folder"))
   data.table(readMetadata(fn), key="Well")
 }
 
 #'Get deposition values from an Aushon log dta files
 #'
-#' @param path path to the directory with barcode level subdirectories
-#' @param barcode barcode or plate ID
+#' @param fn full path and file name for the log metadata file
 #' @return a datatable with an integer Depostion column
 #' @export 
-getLogMetadata <- function(path, barcode){
-  fn <- dir(paste0(path,barcode,"/Analysis"),pattern = "xml",full.names = TRUE)
+getLogMetadata <- function(fn){
   if(!length(fn)==1) stop(paste("There must be 1 xml file in the",barcode, "Analysis folder"))
   readLogData(fn)
 }
 #'Read the spot metadata from a gal file
 #'
-#' @param path path to the directory with barcode level subdirectories
-#' @param barcode barcode or plate ID
+#' @param fn full path and file name for the spot metadata file
 #' @return a datatable with the spot level metadata 
 #' @export 
-getSpotMetadata <- function(path, barcode){
-  fn <- dir(paste0(barcodePath,"/Analysis"),pattern = "gal",full.names = TRUE)
+getSpotMetadata <- function(fn){
   if(!length(fn)==1) stop(paste("There must be 1 gal file in the",barcode, "Analysis folder"))
   smd <- readSpotMetadata(fn)
   setnames(smd, "Name", "ECMp")
@@ -111,22 +105,27 @@ mergeSpot96WellMetadata <- function(spotMetadata,wellMetadata){
 }
 
 #' Get metadata from either An! or !An! files
+#' @param metadataFiles A list of of full file names for metadata. The items in 
+#' the list must have names of annotMetadata, logMetadata, spotMetadata or wellMetadata
+#' @param useAnnotMetadata Logical indicating whether to use metadata in Annot files
+#' or excel files
+#' @return A datatable containing the metadata
 #' 
 #' @export
-getMetadata <- function(barcode, path, useAnnotMetadata=TRUE){
+getMetadata <- function(metadataFiles, useAnnotMetadata=TRUE){
   #Use metadata from an2omero files
   if(useAnnotMetadata){
-    metadata <- processan2omero(paste0(path,barcode,"/Analysis/",barcode,"_an2omero.csv"))
+    metadata <- processan2omero(metadataFiles[["annotMetadata"]])
     MEMA8Well <- length(unique(metadata$Well))==8
     MEMA96Well <- length(unique(metadata$Well))==96
   } else { #Process xml, gal and excel files to get all metadata
     #Read the log metadata from an Aushon log file
-    ldf <- getLogMetadata(path, barcode)
+    ldf <- getLogMetadata(metadataFiles[["logMetadata"]])
     #Read in the spot metadata from the gal file
-    galmd <- getSpotMetadata(path,barcode)
+    galmd <- getSpotMetadata(metadataFiles[["spotMetadata"]])
     spotMetadata <- merge(galmd,ldf, by = c("Row","Column"), all=TRUE)
     #Read the well metadata from a multi-sheet Excel file
-    wellMetadata <- getWellMetadata(path, barcode)
+    wellMetadata <- getWellMetadata(metadataFiles[["wellMetadata"]])
     #Determine if this is metadata for an 8 or 96 well plate 
     MEMA8Well <- setequal(unique(wellMetadata$Well),c("A01","A02","A03","A04","B01","B02","B03","B04"))
     MEMA96Well <- length(unique(wellMetadata$Well))==96
@@ -163,7 +162,7 @@ getMetadata <- function(barcode, path, useAnnotMetadata=TRUE){
 getCPData <- function(dataBWInfo, curatedOnly=TRUE, curatedCols= "ImageNumber|ObjectNumber|AreaShape|_MedianIntensity_|_IntegratedIntensity_|_Center_|_PA_|Texture", verbose=FALSE){
   dtL <- lapply(unique(dataBWInfo$Well), function(well){
     if(verbose) message(paste("Reading and annotating data for",barcode, well,"\n"))
-    nuclei <- convertColumnNames(fread(dataBWInfo$Path[grepl("Nuclei",dataBWInfo$Location)&grepl(well,dataBWInfo$Well)]))
+    nuclei <- convertColumnNames(fread(dataBWInfo$Path[grepl("Nuclei",dataBWInfo$Location)&grepl(well,dataBWInfo$Well)], verbose=FALSE, showProgress=FALSE))
     if (curatedOnly) nuclei <- nuclei[,grep(curatedCols,colnames(nuclei)), with=FALSE]
     setnames(nuclei,paste0("Nuclei_",colnames(nuclei)))
     setnames(nuclei,"Nuclei_CP_ImageNumber","Spot")
@@ -171,7 +170,7 @@ getCPData <- function(dataBWInfo, curatedOnly=TRUE, curatedCols= "ImageNumber|Ob
     setkey(nuclei,Spot,ObjectNumber) 
     
     if(any(grepl("Cells",dataBWInfo$Location)&grepl(well,dataBWInfo$Well))){
-      cells <- convertColumnNames(fread(dataBWInfo$Path[grepl("Cells",dataBWInfo$Location)&grepl(well,dataBWInfo$Well)]))
+      cells <- convertColumnNames(fread(dataBWInfo$Path[grepl("Cells",dataBWInfo$Location)&grepl(well,dataBWInfo$Well)], verbose=FALSE, showProgress=FALSE))
       if (curatedOnly) cells <- cells[,grep(curatedCols,colnames(cells)), with=FALSE]
       setnames(cells,paste0("Cells_",colnames(cells)))
       setnames(cells,"Cells_CP_ImageNumber","Spot")
@@ -180,7 +179,7 @@ getCPData <- function(dataBWInfo, curatedOnly=TRUE, curatedCols= "ImageNumber|Ob
     } 
     
     if(any(grepl("Cytoplasm",dataBWInfo$Location)&grepl(well,dataBWInfo$Well))){
-      cytoplasm <- convertColumnNames(fread(dataBWInfo$Path[grepl("Cytoplasm",dataBWInfo$Location)&grepl(well,dataBWInfo$Well)]))
+      cytoplasm <- convertColumnNames(fread(dataBWInfo$Path[grepl("Cytoplasm",dataBWInfo$Location)&grepl(well,dataBWInfo$Well)], verbose=FALSE, showProgress=FALSE))
       if (curatedOnly) cytoplasm <- cytoplasm[,grep(curatedCols,colnames(cytoplasm)), with=FALSE]
       setnames(cytoplasm,paste0("Cytoplasm_",colnames(cytoplasm)))
       setnames(cytoplasm,"Cytoplasm_CP_ImageNumber","Spot")
@@ -434,3 +433,25 @@ writeCellLevel <- function(dt,path,barcode, verbose=FALSE){
   fwrite(dt, paste0(path,barcode, "/Analysis/", barcode,"_","Level1.tsv"), sep = "\t", quote=FALSE)
   if(verbose) message(paste("Write time:", Sys.time()-writeTime,"\n"))
 }  
+
+#' Format 96 well plate raw data from the Cell Profiler Pipeline
+#' 
+#' Reformats the metadata for one row of a 96 well plate to match the pipeline. 
+#' The Spot column is converted to an index within each well and a label for the Well is added
+#' to the output data.table
+#' 
+#' @param dt data.table with a Spot column
+#' @param nrArrayRows The number of rows in the printed array
+#' @param nrArrayColumns The number of columns in the printed array
+#' @return A data.table with an alphanumeric Well column and reindexed Spot column
+#' @export
+formatCP96Well <- function(dt, nrArrayRows, nrArrayColumns){
+  nrArraySpots <-nrArrayRows*nrArrayColumns
+  dt$WellIndex <- dt$Spot %/% nrArraySpots +1
+  dt$Spot <- ((dt$Spot-1) %% nrArraySpots)+1
+  dt$Well <-  dt$WellIndex %>%
+    sprintf("%02d",.) %>%
+    paste0(gsub("Row","",dt$Well),.)
+  dt[,WellIndex := NULL]
+  return(dt)
+}
