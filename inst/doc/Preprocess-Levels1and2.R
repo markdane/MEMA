@@ -13,7 +13,7 @@ suppressMessages(synapseLogin())
 ## ----getMetadataFromSynapse----------------------------------------------
 
 barcode <- "LI8X00651"
-metadataq <- sprintf("select id from syn8466225 WHERE DataType='Metadata' AND Barcode='%s'",barcode)
+metadataq <- sprintf("select id from syn7494072 WHERE DataType='Metadata' AND Barcode='%s'",barcode)
 metadataTable <- synTableQuery(metadataq, verbose=FALSE)@values
 metadataFiles <- lapply(metadataTable$id, synGet)
 metadataFiles <- list(annotMetadata=getFileLocation(metadataFiles[[1]]))
@@ -28,8 +28,7 @@ head(metadata[,.(Barcode, Well, Spot, Ligand, ECMp, CellLine, StainingSet)])
 
 ## ----getRawDataFromSynapse-----------------------------------------------
 
-q <- sprintf("select id,name,Barcode,Level,Well,StainingSet,Location from syn7800478 WHERE Level='0' AND Barcode='%s'",
-             barcode)
+q <- sprintf("select id,name,Barcode,Level,Well,StainingSet,Location from syn9838977 WHERE Level='0' AND Barcode='%s'", barcode)
 rawFiles <- synTableQuery(q)
 dataBWInfo <- rawFiles@values
 
