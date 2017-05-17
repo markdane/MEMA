@@ -4,7 +4,7 @@ author: "Mark Dane"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Preprocess and QA MEMA Cell and Spot Level Data}
+  %\VignetteIndexEntry{Preprocess and QA MEMA Level 3 and 4 Data}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
   
