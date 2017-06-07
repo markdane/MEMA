@@ -118,9 +118,10 @@ processan2omero <- function (fileName) {
   nrArrayColumns <- max(dt$ArrayColumn)
   dt$PrintSpot[grepl("B", dt$Well)] <- (nrArrayRows*nrArrayColumns+1)-dt$PrintSpot[grepl("B", dt$Well)]
   #Add a drug concentration in uM/L
-  ConcFactor <- str_extract(dt$Drug1AnConcUnit,".*_per_.|.molar|volume_percent") %>%
+  ConcFactor <- str_extract(dt$Drug1ConcUnit,".*_per_.|.molar|volume_percent") %>%
     sapply(., function(x){
       switch(x,
+             mol_per_L = 1e6,
              mmol_per_L = 1e3,
              umol_per_L = 1,
              nmol_per_L = 1e-3,
@@ -132,14 +133,14 @@ processan2omero <- function (fileName) {
              0)
     })
   #Error handling for when there is no drug metadata
-  dt$Drug1Conc <- dt$Drug1AnConc*ConcFactor
+  dt$Drug1Conc <- dt$Drug1Conc*ConcFactor
   dt$Drug1Conc[is.na(dt$Drug1Conc)] <- 0
   return(dt)
 }
 
 #' Read in and merge the Omero URLs
 #' 
-#' Adds Omero image IDs based on the WelIndex values
+#' Adds Omero image IDs based on the WellName values
 #' 
 #' @param path The path to the file named barcode_imageIDs.tsv
 #' @return a datatable with WellIndex, ArrayRow, ArrayColumn and ImageID columns
@@ -151,6 +152,5 @@ getOmeroIDs <- function(path){
   setnames(dt,"Row","ArrayRow")
   setnames(dt,"Column","ArrayColumn")
   dt[,WellName := NULL]
-  message(nrow(dt))
   return(dt)
 }
