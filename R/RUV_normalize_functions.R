@@ -220,7 +220,7 @@ createRUVM <- function(dt,replicateCols=c("CellLine","Ligand","Drug"))
   #Indicate the replicate ligands
   for(replicate in colnames(M)){
     #Put a 1 in the rownames that contain the column name
-    M[grepl(replicate,rownames(M)),colnames(M)==replicate] <- 1
+    M[grepl(replicate,rownames(M),fixed=TRUE),colnames(M)==replicate] <- 1
   }
   rownames(M) <- gsub("pipe","|",rownames(M))
   colnames(M) <- gsub("pipe","|",colnames(M))

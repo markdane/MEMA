@@ -104,7 +104,7 @@ processan2omero <- function (fileName) {
     gsub("_COL1|_$","",.)
   #Chain ligands
   dt$Ligand <-paste0(gsub("_.*","",dt$Ligand1),"_",gsub("_.*","",dt$Ligand2)) %>%
-    gsub("_NA","",.)
+    gsub("_NA|_$","",.)
   dt$MEP <- paste0(dt$ECMp,"_",dt$Ligand)
   dt$Drug <- gsub("_.*","",dt$Drug1)
   dt$MEP_Drug <-paste0(dt$MEP,"_",dt$Drug)
