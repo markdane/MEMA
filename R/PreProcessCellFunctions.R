@@ -45,8 +45,7 @@ mergeSpot8WellMetadata <- function(spotMetadata,wellMetadata){
       dt <- dt[,PrintSpot := Spot]
     } else {
       dt <- cbind(rotateMetadata(spotMetadata),data.frame(t(x), stringsAsFactors = FALSE))
-      dt <- dt[,PrintSpot := Spot]
-      dt <- dt[,Spot :=max(PrintSpot)+1-Spot]
+      dt <- dt[,PrintSpot := max(Spot)+1-Spot]
     }
   })
   rbindlist(wmdL)
