@@ -361,8 +361,11 @@ gateCells <- function(dt, synId="syn10138929"){
   #Set 2N and 4N DNA status
   #Use override parameter if it exists
   if(overrideParms) {
-    dt$Nuclei_PA_Cycle_State <- 1
-    dt$Nuclei_PA_Cycle_State[dt$Nuclei_CP_Intensity_IntegratedIntensity_Dapi > parms$CycleStateThresh] <- 2
+    if(!parms$CycleStateThresh==0){
+      #if CycleStateThresh == 0 then do not generate a Cycle State signal
+      dt$Nuclei_PA_Cycle_State <- 1
+      dt$Nuclei_PA_Cycle_State[dt$Nuclei_CP_Intensity_IntegratedIntensity_Dapi > parms$CycleStateThresh] <- 2
+    }
   } else {
     dt <- dt[,Nuclei_PA_Cycle_State := gateOnlocalMinima(Nuclei_CP_Intensity_IntegratedIntensity_Dapi)]
   }
@@ -371,8 +374,11 @@ gateCells <- function(dt, synId="syn10138929"){
   if("Nuclei_CP_Intensity_MedianIntensity_EdU" %in% colnames(dt)){
     #Use override parameters if they exist
     if(overrideParms) {
-      dt$Nuclei_PA_Gated_EdUPositive <- 0
-      dt$Nuclei_PA_Gated_EdUPositive[dt$Nuclei_CP_Intensity_MedianIntensity_EdU > parms$EdUPositiveThresh] <- 1
+      if(!parms$EdUPositiveThresh==0){
+        #if EdUPositiveThresh == 0 then do not generate a Gated EdU Positive signal
+        dt$Nuclei_PA_Gated_EdUPositive <- 0
+        dt$Nuclei_PA_Gated_EdUPositive[dt$Nuclei_CP_Intensity_MedianIntensity_EdU > parms$EdUPositiveThresh] <- 1
+      }
     } else {
       #Use the entire plate to set the autogate threshold if there's no control well
       if(any(grepl("FBS",unique(dt$Ligand)))){
@@ -391,8 +397,11 @@ gateCells <- function(dt, synId="syn10138929"){
   #Gate KRT5 using override parameters if they exist
   if("Cytoplasm_CP_Intensity_MedianIntensity_KRT5" %in% colnames(dt)){  
     if(overrideParms) {
-      dt$Cytoplasm_PA_Gated_KRT5Positive <- 0
-      dt$Cytoplasm_PA_Gated_KRT5Positive[dt$Cytoplasm_CP_Intensity_MedianIntensity_KRT5 > parms$KRT5PositiveThresh] <- 1
+      if(!parms$KRT5PositiveThresh==0){
+        #if KRT5PositiveThresh == 0 do not generate a KRT5 gated Positive signal
+        dt$Cytoplasm_PA_Gated_KRT5Positive <- 0
+        dt$Cytoplasm_PA_Gated_KRT5Positive[dt$Cytoplasm_CP_Intensity_MedianIntensity_KRT5 > parms$KRT5PositiveThresh] <- 1
+      }
     } else if(grepl("HMEC",unique(dt$CellLine))) {
       dt <- dt[,Cytoplasm_PA_Gated_KRT5Positive := gateOnQuantile(Cytoplasm_CP_Intensity_MedianIntensity_KRT5,probs=.02),by="Barcode"]
     } else {
@@ -403,8 +412,11 @@ gateCells <- function(dt, synId="syn10138929"){
   #Gate KRT14 using override parameters if they exist
   if("Cytoplasm_CP_Intensity_MedianIntensity_KRT14" %in% colnames(dt)){  
     if(overrideParms) {
-      dt$Cytoplasm_PA_Gated_KRT14Positive <- 0
-      dt$Cytoplasm_PA_Gated_KRT14Positive[dt$Cytoplasm_CP_Intensity_MedianIntensity_KRT14 > parms$KRT14PositiveThresh] <- 1
+      if(!parms$KRT14PositiveThresh==0){
+        #if KRT14PositiveThresh == 0 do not generate a KRT14 gated Positive signal
+        dt$Cytoplasm_PA_Gated_KRT14Positive <- 0
+        dt$Cytoplasm_PA_Gated_KRT14Positive[dt$Cytoplasm_CP_Intensity_MedianIntensity_KRT14 > parms$KRT14PositiveThresh] <- 1
+      }
     } else {
       dt <- dt[,Cytoplasm_PA_Gated_KRT14Positive := gateOnQuantile(Cytoplasm_CP_Intensity_MedianIntensity_KRT14,probs=.02),by="Barcode"]
     }
@@ -413,8 +425,11 @@ gateCells <- function(dt, synId="syn10138929"){
   #Gate KRT19 using override parameters if they exist
   if("Cytoplasm_CP_Intensity_MedianIntensity_KRT19" %in% colnames(dt)){  
     if(overrideParms) {
-      dt$Cytoplasm_PA_Gated_KRT19Positive <- 0
-      dt$Cytoplasm_PA_Gated_KRT19Positive[dt$Cytoplasm_CP_Intensity_MedianIntensity_KRT19 > parms$KRT19PositiveThresh] <- 1
+      if(!parms$KRT19PositiveThresh==0){
+        #if KRT19PositiveThresh == 0 do not generate a KRT19 gated Positive signal
+        dt$Cytoplasm_PA_Gated_KRT19Positive <- 0
+        dt$Cytoplasm_PA_Gated_KRT19Positive[dt$Cytoplasm_CP_Intensity_MedianIntensity_KRT19 > parms$KRT19PositiveThresh] <- 1
+      }
     } else {
       dt <- dt[,Cytoplasm_PA_Gated_KRT19Positive := gateOnQuantile(Cytoplasm_CP_Intensity_MedianIntensity_KRT19,probs=.02),by="Barcode"]
     }
