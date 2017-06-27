@@ -45,8 +45,7 @@ mergeSpot8WellMetadata <- function(spotMetadata,wellMetadata){
       dt <- dt[,PrintSpot := Spot]
     } else {
       dt <- cbind(rotateMetadata(spotMetadata),data.frame(t(x), stringsAsFactors = FALSE))
-      dt <- dt[,PrintSpot := Spot]
-      dt <- dt[,Spot :=max(PrintSpot)+1-Spot]
+      dt <- dt[,PrintSpot := max(Spot)+1-Spot]
     }
   })
   rbindlist(wmdL)
@@ -350,49 +349,139 @@ calcAdjacency <- function(dt, neighborhoodNucleiRadii=7,neighborsThresh=0.4,wedg
 #' 
 #' @param dt A datatable that contains cell level data and metadata
 #' @export
-gateCells <- function(dt){
+gateCells <- function(dt, synId="syn10138929"){
+  #Read parameter file from Synapse
+  library(synapseClient)
+  synapseLogin()
+  parms <- synGet(synId) %>%
+    synapseClient::getFileLocation() %>%
+    data.table::fread(check.names = TRUE) %>%
+    dplyr::filter(Barcode==unique(dt$Barcode))
+  overrideParms <- nrow(parms)==1
   #Set 2N and 4N DNA status
-  dt <- dt[,Nuclei_PA_Cycle_State := gateOnlocalMinima(Nuclei_CP_Intensity_IntegratedIntensity_Dapi)]
+  #Use override parameter if it exists
+  if(overrideParms) {
+    if(!parms$CycleStateThresh==0){
+      #if CycleStateThresh == 0 then do not generate a Cycle State signal
+      dt$Nuclei_PA_Cycle_State <- 1
+      dt$Nuclei_PA_Cycle_State[dt$Nuclei_CP_Intensity_IntegratedIntensity_Dapi > parms$CycleStateThresh] <- 2
+    }
+  } else {
+    dt <- dt[,Nuclei_PA_Cycle_State := gateOnlocalMinima(Nuclei_CP_Intensity_IntegratedIntensity_Dapi)]
+  }
+  
   #Create staining set specific derived parameters
   if("Nuclei_CP_Intensity_MedianIntensity_EdU" %in% colnames(dt)){
-    #Use the entire plate to set the autogate threshold if there's no control well
-    if(any(grepl("FBS",unique(dt$Ligand)))){
-      dt <- dt[,Nuclei_PA_Gated_EdUPositive := kmeansCluster(.SD,value =  "Nuclei_CP_Intensity_MedianIntensity_EdU",ctrlLigand = "FBS"), by="Barcode"]
+    #Use override parameters if they exist
+    if(overrideParms) {
+      if(!parms$EdUPositiveThresh==0){
+        #if EdUPositiveThresh == 0 then do not generate a Gated EdU Positive signal
+        dt$Nuclei_PA_Gated_EdUPositive <- 0
+        dt$Nuclei_PA_Gated_EdUPositive[dt$Nuclei_CP_Intensity_MedianIntensity_EdU > parms$EdUPositiveThresh] <- 1
+      }
     } else {
-      dt <- dt[,Nuclei_PA_Gated_EdUPositive := kmeansCluster(.SD,value =  "Nuclei_CP_Intensity_MedianIntensity_EdU",ctrlLigand = "."), by="Barcode"]
+      #Use the entire plate to set the autogate threshold if there's no control well
+      if(any(grepl("FBS",unique(dt$Ligand)))){
+        dt <- dt[,Nuclei_PA_Gated_EdUPositive := kmeansCluster(.SD,value =  "Nuclei_CP_Intensity_MedianIntensity_EdU",ctrlLigand = "FBS"), by="Barcode"]
+      } else {
+        dt <- dt[,Nuclei_PA_Gated_EdUPositive := kmeansCluster(.SD,value =  "Nuclei_CP_Intensity_MedianIntensity_EdU",ctrlLigand = "."), by="Barcode"]
+      }
+      #Modify the auto gate threshold to be 3 sigma from the EdU- median
+      EdUDT <- dt[Nuclei_PA_Gated_EdUPositive==0,.(EdUMedian=median(Nuclei_CP_Intensity_MedianIntensity_EdU, na.rm=TRUE),EdUSD=sd(Nuclei_CP_Intensity_MedianIntensity_EdU, na.rm=TRUE)),by="Barcode,Well"]
+      EdUDT <- EdUDT[,Median3SD := EdUMedian+3*EdUSD]
+      dt <- merge(dt,EdUDT,by=c("Barcode","Well"))
+      dt$Nuclei_PA_Gated_EdUPositive[dt$Nuclei_CP_Intensity_MedianIntensity_EdU>dt$Median3SD]<-1
     }
-    #Modify the gate threshold to be 3 sigma from the EdU- median
-    EdUDT <- dt[Nuclei_PA_Gated_EdUPositive==0,.(EdUMedian=median(Nuclei_CP_Intensity_MedianIntensity_EdU, na.rm=TRUE),EdUSD=sd(Nuclei_CP_Intensity_MedianIntensity_EdU, na.rm=TRUE)),by="Barcode,Well"]
-    EdUDT <- EdUDT[,Median3SD := EdUMedian+3*EdUSD]
-    dt <- merge(dt,EdUDT,by=c("Barcode","Well"))
-    dt$Nuclei_PA_Gated_EdUPositive[dt$Nuclei_CP_Intensity_MedianIntensity_EdU>dt$Median3SD]<-1
-    #Overide autogate for AU565 cell line in Lapatinib MEMAs
-    # if(grepl("AU565_Lapatinib|AU565_DMSO",datasetName)){
-    #   dt$Nuclei_PA_Gated_EdUPositive <- 0
-    #   dt$Nuclei_PA_Gated_EdUPositive[dt$Nuclei_CP_Intensity_MedianIntensity_EdULog2>10] <- 1
-    # }
+  }
+  
+  #Gate KRT5 using override parameters if they exist
+  if("Cytoplasm_CP_Intensity_MedianIntensity_KRT5" %in% colnames(dt)){  
+    if(overrideParms) {
+      if(!parms$KRT5PositiveThresh==0){
+        #if KRT5PositiveThresh == 0 do not generate a KRT5 gated Positive signal
+        dt$Cytoplasm_PA_Gated_KRT5Positive <- 0
+        dt$Cytoplasm_PA_Gated_KRT5Positive[dt$Cytoplasm_CP_Intensity_MedianIntensity_KRT5 > parms$KRT5PositiveThresh] <- 1
+      }
+    } else if(grepl("HMEC",unique(dt$CellLine))) {
+      dt <- dt[,Cytoplasm_PA_Gated_KRT5Positive := gateOnQuantile(Cytoplasm_CP_Intensity_MedianIntensity_KRT5,probs=.02),by="Barcode"]
+    } else {
+      dt <- dt[,Cytoplasm_PA_Gated_KRT5Positive := kmeansCluster(.SD,value =  "Cytoplasm_CP_Intensity_MedianIntensity_KRT5",ctrlLigand = "."), by="Barcode"]
+    }
+  }
+  
+  #Gate KRT14 using override parameters if they exist
+  if("Cytoplasm_CP_Intensity_MedianIntensity_KRT14" %in% colnames(dt)){  
+    if(overrideParms) {
+      if(!parms$KRT14PositiveThresh==0){
+        #if KRT14PositiveThresh == 0 do not generate a KRT14 gated Positive signal
+        dt$Cytoplasm_PA_Gated_KRT14Positive <- 0
+        dt$Cytoplasm_PA_Gated_KRT14Positive[dt$Cytoplasm_CP_Intensity_MedianIntensity_KRT14 > parms$KRT14PositiveThresh] <- 1
+      }
+    } else {
+      dt <- dt[,Cytoplasm_PA_Gated_KRT14Positive := gateOnQuantile(Cytoplasm_CP_Intensity_MedianIntensity_KRT14,probs=.02),by="Barcode"]
+    }
+  }
+  
+  #Gate KRT19 using override parameters if they exist
+  if("Cytoplasm_CP_Intensity_MedianIntensity_KRT19" %in% colnames(dt)){  
+    if(overrideParms) {
+      if(!parms$KRT19PositiveThresh==0){
+        #if KRT19PositiveThresh == 0 do not generate a KRT19 gated Positive signal
+        dt$Cytoplasm_PA_Gated_KRT19Positive <- 0
+        dt$Cytoplasm_PA_Gated_KRT19Positive[dt$Cytoplasm_CP_Intensity_MedianIntensity_KRT19 > parms$KRT19PositiveThresh] <- 1
+      }
+    } else {
+      dt <- dt[,Cytoplasm_PA_Gated_KRT19Positive := gateOnQuantile(Cytoplasm_CP_Intensity_MedianIntensity_KRT19,probs=.02),by="Barcode"]
+    }
   }
   
   #Calculate a lineage ratio of luminal/basal or KRT19/KRT5
   if ("Cytoplasm_CP_Intensity_MedianIntensity_KRT19" %in% colnames(dt)&
       "Cytoplasm_CP_Intensity_MedianIntensity_KRT5" %in% colnames(dt)){
     dt <- dt[,Cytoplasm_PA_Intensity_LineageRatio := Cytoplasm_CP_Intensity_MedianIntensity_KRT19/Cytoplasm_CP_Intensity_MedianIntensity_KRT5]
-    #Gate the KRT signals using kmeans clustering
     
-    if(grepl("HMEC",unique(dt$CellLine))) {
-      dt <- dt[,Cytoplasm_PA_Gated_KRT5Positive := gateOnQuantile(Cytoplasm_CP_Intensity_MedianIntensity_KRT5,probs=.02),by="Barcode,Well"]
-    } else {
-      dt <- dt[,Cytoplasm_PA_Gated_KRT5Positive := kmeansCluster(.SD,value =  "Cytoplasm_CP_Intensity_MedianIntensity_KRT5",ctrlLigand = "."), by="Barcode"]
-    }
-    dt <- dt[,Cytoplasm_PA_Gated_KRT19Positive := kmeansCluster(.SD,value =  "Cytoplasm_CP_Intensity_MedianIntensity_KRT19",ctrlLigand = "."), by="Barcode"]
     #Determine the class of each cell based on KRT5 and KRT19 class
     #0 double negative
     #1 KRT5+, KRT19-
     #2 KRT5-, KRT19+
     #3 KRT5+, KRT19+
     dt <- dt[,Cytoplasm_PA_Gated_KRTClass := Cytoplasm_PA_Gated_KRT5Positive+2*Cytoplasm_PA_Gated_KRT19Positive]
-    
   }
+  
+  if ("Cytoplasm_CP_Intensity_MedianIntensity_KRT14" %in% colnames(dt)&
+      "Cytoplasm_CP_Intensity_MedianIntensity_KRT19" %in% colnames(dt)){
+    #Calculate a lineage ratio of luminal/basal or KRT19/KRT14
+    dt <- dt[,Cytoplasm_PA_Intensity_LineageRatio := Cytoplasm_CP_Intensity_MedianIntensity_KRT19/Cytoplasm_CP_Intensity_MedianIntensity_KRT14]
+    #Determine the class of each cell based on KRT5 and KRT19 class
+    #0 double negative
+    #1 KRT14+, KRT19-
+    #2 KRT14-, KRT19+
+    #3 KRT14+, KRT19+
+    dt <- dt[,Cytoplasm_PA_Gated_KRTClass := Cytoplasm_PA_Gated_KRT14Positive+2*Cytoplasm_PA_Gated_KRT19Positive]
+  }
+  
+  if ("Cytoplasm_PA_Gated_KRT5Positive" %in% colnames(dt)&
+      "Nuclei_PA_Gated_EdUPositive" %in% colnames(dt)){
+    #Determine the class of each cell based on KRT5 and EdU class
+    #0 double negative
+    #1 KRT5+, EdU-
+    #2 KRT5-, EdU+
+    #3 KRT5+, EdU+
+    #Use override parameters if they exist
+    dt <- dt[,Cells_PA_Gated_EdUKRT5Class := Cytoplasm_PA_Gated_KRT5Positive+2*Nuclei_PA_Gated_EdUPositive]
+  }
+  
+  if ("Cytoplasm_PA_Gated_KRT14Positive" %in% colnames(dt)&
+      "Nuclei_PA_Gated_EdUPositive" %in% colnames(dt)){
+    #Determine the class of each cell based on KRT5 and EdU class
+    #0 double negative
+    #1 KRT14+, EdU-
+    #2 KRT14-, EdU+
+    #3 KRT14+, EdU+
+    #Use override parameters if they exist
+    dt <- dt[,Cells_PA_Gated_EdUKRT14Class := Cytoplasm_PA_Gated_KRT14Positive+2*Nuclei_PA_Gated_EdUPositive]
+  }
+  
   if("Nuclei_PA_Gated_EdUPositive" %in% colnames(dt)&
      "Cytoplasm_PA_Gated_KRT19Positive" %in% colnames(dt)){
     #Determine the class of each cell based on KRT19 and EdU class
@@ -403,21 +492,6 @@ gateCells <- function(dt){
     dt <- dt[,Cells_PA_Gated_EdUKRT19Class := Cytoplasm_PA_Gated_KRT19Positive+2*Nuclei_PA_Gated_EdUPositive]
   }
   
-  if ("Cytoplasm_CP_Intensity_MedianIntensity_KRT14" %in% colnames(dt)&
-      "Cytoplasm_CP_Intensity_MedianIntensity_KRT19" %in% colnames(dt)){
-    #Calculate a lineage ratio of luminal/basal or KRT19/KRT14
-    dt <- dt[,Cytoplasm_PA_Intensity_LineageRatio := Cytoplasm_CP_Intensity_MedianIntensity_KRT19/Cytoplasm_CP_Intensity_MedianIntensity_KRT14]
-  }
-  if ("Cytoplasm_CP_Intensity_MedianIntensity_KRT5Log2" %in% colnames(dt)&
-      "Nuclei_PA_Gated_EdUPositive" %in% colnames(dt)){
-    #Determine the class of each cell based on KRT5 and EdU class
-    #0 double negative
-    #1 KRT5+, EdU-
-    #2 KRT5-, EdU+
-    #3 KRT5+, EdU+
-    dt <- dt[,Cytoplasm_PA_Gated_KRT5Positive := gateOnQuantile(Cytoplasm_CP_Intensity_MedianIntensity_KRT5,probs=.02),by="Barcode,Well"]
-    dt <- dt[,Cells_PA_Gated_EdUKRT5Class := Cytoplasm_PA_Gated_KRT5Positive+2*Nuclei_PA_Gated_EdUPositive]
-  }
   return(dt)
 }
 
