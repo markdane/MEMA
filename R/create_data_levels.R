@@ -95,10 +95,10 @@ addSpotProportions <- function(dt){
     #2 KRT5-, KRT19+
     #3 KRT5+, KRT19+
     #Calculate gating proportions for EdU and KRT19
-    dt <- dt[,Cytoplasm_PA_Gated_KRT5KRT19NegativeProportion := sum(Cytoplasm_PA_Gated_KRTClass==0)/length(ObjectNumber),by="Barcode,Well,Spot"]
-    dt <- dt[,Cytoplasm_PA_Gated_KRT5NegativeKRT19PositiveProportion := sum(Cytoplasm_PA_Gated_KRTClass==2)/length(ObjectNumber),by="Barcode,Well,Spot"]
-    dt <- dt[,Cytoplasm_PA_Gated_KRT5PositiveKRT19NegativeProportion := sum(Cytoplasm_PA_Gated_KRTClass==1)/length(ObjectNumber),by="Barcode,Well,Spot"]
-    dt <- dt[,Cytoplasm_PA_Gated_KRT5PositivedKRT19PositiveProportion := sum(Cytoplasm_PA_Gated_KRTClass==3)/length(ObjectNumber),by="Barcode,Well,Spot"]
+    dt <- dt[,Cytoplasm_PA_Gated_BasalLuminalNegativeProportion := sum(Cytoplasm_PA_Gated_KRTClass==0)/length(ObjectNumber),by="Barcode,Well,Spot"]
+    dt <- dt[,Cytoplasm_PA_Gated_BasalNegativeLuminalPositiveProportion := sum(Cytoplasm_PA_Gated_KRTClass==2)/length(ObjectNumber),by="Barcode,Well,Spot"]
+    dt <- dt[,Cytoplasm_PA_Gated_BasalPositiveLuminalNegativeProportion := sum(Cytoplasm_PA_Gated_KRTClass==1)/length(ObjectNumber),by="Barcode,Well,Spot"]
+    dt <- dt[,Cytoplasm_PA_Gated_BasalPositivedLuminalPositiveProportion := sum(Cytoplasm_PA_Gated_KRTClass==3)/length(ObjectNumber),by="Barcode,Well,Spot"]
   }
   
   if ("Cells_PA_Gated_EdUKRT5Class" %in% colnames(dt)){
@@ -112,6 +112,32 @@ addSpotProportions <- function(dt){
     dt <- dt[,Cells_PA_Gated_EdUPositiveKRT5NegativeProportion := sum(Cells_PA_Gated_EdUKRT5Class==2)/length(ObjectNumber),by="Barcode,Well,Spot"]
     dt <- dt[,Cells_PA_Gated_EdUNegativeKRT5PositiveProportion := sum(Cells_PA_Gated_EdUKRT5Class==1)/length(ObjectNumber),by="Barcode,Well,Spot"]
     dt <- dt[,Cells_PA_Gated_EdUKRT5PositiveProportion := sum(Cells_PA_Gated_EdUKRT5Class==3)/length(ObjectNumber),by="Barcode,Well,Spot"]
+  }
+  
+  if ("Cells_PA_Gated_EdUKRT14Class" %in% colnames(dt)){
+    #Determine the class of each cell based on KRT14 and EdU class
+    #0 double negative
+    #1 KRT14+, EdU-
+    #2 KRT14-, EdU+
+    #3 KRT14+, EdU+
+    #Calculate gating proportions for EdU and KRT14
+    dt <- dt[,Cells_PA_Gated_EdUKRT14NegativeProportion := sum(Cells_PA_Gated_EdUKRT14Class==0)/length(ObjectNumber),by="Barcode,Well,Spot"]
+    dt <- dt[,Cells_PA_Gated_EdUPositiveKRT14NegativeProportion := sum(Cells_PA_Gated_EdUKRT14Class==2)/length(ObjectNumber),by="Barcode,Well,Spot"]
+    dt <- dt[,Cells_PA_Gated_EdUNegativeKRT14PositiveProportion := sum(Cells_PA_Gated_EdUKRT14Class==1)/length(ObjectNumber),by="Barcode,Well,Spot"]
+    dt <- dt[,Cells_PA_Gated_EdUKRT14PositiveProportion := sum(Cells_PA_Gated_EdUKRT14Class==3)/length(ObjectNumber),by="Barcode,Well,Spot"]
+  }
+  
+  if ("Cells_PA_Gated_EdUKRT19Class" %in% colnames(dt)){
+    #Determine the class of each cell based on KRT19 and EdU class
+    #0 double negative
+    #1 KRT19+, EdU-
+    #2 KRT19-, EdU+
+    #3 KRT19+, EdU+
+    #Calculate gating proportions for EdU and KRT19
+    dt <- dt[,Cells_PA_Gated_EdUKRT19NegativeProportion := sum(Cells_PA_Gated_EdUKRT19Class==0)/length(ObjectNumber),by="Barcode,Well,Spot"]
+    dt <- dt[,Cells_PA_Gated_EdUPositiveKRT19NegativeProportion := sum(Cells_PA_Gated_EdUKRT19Class==2)/length(ObjectNumber),by="Barcode,Well,Spot"]
+    dt <- dt[,Cells_PA_Gated_EdUNegativeKRT19PositiveProportion := sum(Cells_PA_Gated_EdUKRT19Class==1)/length(ObjectNumber),by="Barcode,Well,Spot"]
+    dt <- dt[,Cells_PA_Gated_EdUKRT19PositiveProportion := sum(Cells_PA_Gated_EdUKRT19Class==3)/length(ObjectNumber),by="Barcode,Well,Spot"]
   }
 }
 
