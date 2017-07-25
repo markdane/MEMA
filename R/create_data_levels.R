@@ -238,7 +238,7 @@ preprocessLevel4 <- function(dt, seNames=NULL){
   
   #Merge back in the replicate metadata
 
-  metadataNames <- grep("_SE|Barcode|^BW$|ArrayRow|ArrayColumn|^Well$|WellIndex|^Spot$|^PrintSpot$|^Well_Ligand$|ImageID|QA_|ECMSet|^Row$|^Column$|^Block$|PlateRow|^QAScore$|^ID$|LigandSet|PrintOrder",colnames(dt), value=TRUE,invert=TRUE) %>%
+  metadataNames <- grep("_SE|Barcode|^BW$|ArrayRow|ArrayColumn|^Well$|WellIndex|^Spot$|^PrintSpot$|^Well_Ligand$|ImageID|ClarionID|QA_|ECMSet|^Row$|^Column$|^Block$|PlateRow|^QAScore$|^ID$|LigandSet|PrintOrder",colnames(dt), value=TRUE,invert=TRUE) %>%
     setdiff(rawSignalNames)
   mdDT <- unique(dt[,metadataNames, with=FALSE])
   setkey(l4Signals,Ligand,ECMp,Drug,Drug1Conc,CellLine)
