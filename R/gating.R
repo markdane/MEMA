@@ -6,7 +6,7 @@ localMinima <- function(x, probs=c(.2,.8)){
   #Finds the local minima between the probs quantiles
   #x numeric vector
   #probs interval limits on where to search for the minima
-  h <- hist(x,breaks=300, plot=FALSE)
+  h <- hist(x,breaks=200, plot=FALSE)
   if(length(h$mids)<2) return(max(x))
   f <- approxfun(h$mids, h$counts)
   o <- optimise(f, interval=quantile(x, probs))
@@ -32,7 +32,7 @@ gateOnQuantile <- function(x,probs){
 #' @export
 gateOnlocalMinima <- function(x, probs=c(.2,.8), ...){
   thresh <- localMinima(x, probs, ...)
-  cluster <- rep.int(1,times=length(x))
-  cluster[x>thresh] <- 2
+  cluster <- rep.int(as.integer(1),times=length(x))
+  cluster[x>thresh] <- as.integer(2)
   return(cluster)
 }
