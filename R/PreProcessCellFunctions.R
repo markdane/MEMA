@@ -431,7 +431,7 @@ gateCells <- function(dt, synId="syn10138929"){
         dt$Cytoplasm_PA_Gated_KRT19Positive[dt$Cytoplasm_CP_Intensity_MedianIntensity_KRT19 > parms$KRT19PositiveThresh] <- 1
       }
     } else {
-      dt <- dt[,Cytoplasm_PA_Gated_KRT19Positive := gateOnQuantile(Cytoplasm_CP_Intensity_MedianIntensity_KRT19,probs=.02),by="Barcode"]
+      dt <- dt[,Cytoplasm_PA_Gated_KRT19Positive := kmeansCluster(.SD, "Cytoplasm_CP_Intensity_MedianIntensity_KRT19",ctrlLigand = "."), by="Barcode"]
     }
   }
   
