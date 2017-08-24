@@ -9,7 +9,7 @@ localMinima <- function(x, probs=c(.2,.8)){
   h <- hist(x,breaks=200, plot=FALSE)
   if(length(h$mids)<2) return(max(x))
   f <- approxfun(h$mids, h$counts)
-  o <- optimise(f, interval=quantile(x, probs))
+  o <- optimise(f, interval=quantile(x, probs,na.rm = TRUE))
   if(length(o)>2) stop()
   return(o$minimum)
 }
@@ -22,7 +22,7 @@ localMinima <- function(x, probs=c(.2,.8)){
 #'@export
 gateOnQuantile <- function(x,probs){
   gatedClass <- integer(length(x))
-  gatedClass[x>quantile(x,probs=probs,na.rm=TRUE)]<-1
+  gatedClass[x>quantile(x,probs=probs, na.rm=TRUE)]<-1
   return(gatedClass)
 }
 

@@ -182,8 +182,10 @@ kmeansClusterValue <- function (x, centers = 2)
 #'
 #'@export
 kmeansCluster <- function(x,value,ctrlLigand="HighSerum"){
-  ctrlClusters <- kmeansClusterValue(log2(1+x[[value]][grepl(ctrlLigand,x$Ligand)]))
-  ctrlPositiveThresh <- min(x[[value]][grepl(ctrlLigand,x$Ligand)][ctrlClusters==2])
+  #Must remove NAs before running kmeans but not mess up x
+  xc <- x[!is.na(x[[value]]),]
+  ctrlClusters <- kmeansClusterValue(log2(1+xc[[value]][grepl(ctrlLigand,xc$Ligand)]))
+  ctrlPositiveThresh <- min(xc[[value]][grepl(ctrlLigand,xc$Ligand)][ctrlClusters==2])
   clusters <- rep.int(0,nrow(x))
   clusters[x[[value]]>ctrlPositiveThresh] <- 1
   return(clusters)
