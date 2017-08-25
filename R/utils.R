@@ -379,7 +379,7 @@ getBarcodes <- function(studyName, synId='syn8440875'){
 getSpotLevelData <- function(paths){
   slDT <- lapply(paths, fread) %>% rbindlist()
   slDT$BW <- paste(slDT$Barcode,slDT$Well,sep="_")
-  slDT <- slDT[!grepl("fiducial|Fiducial|gelatin|blank|air|PBS",slDT$ECMp),]
+  #slDT <- slDT[!grepl("fiducial|Fiducial|gelatin|blank|air|PBS",slDT$ECMp),]
   return(slDT)
 }
 
