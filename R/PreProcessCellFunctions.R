@@ -521,7 +521,7 @@ writeCellLevel <- function(dt,path,barcode, verbose=FALSE){
 #' @export
 formatCP96Well <- function(dt, nrArrayRows, nrArrayColumns){
   nrArraySpots <-nrArrayRows*nrArrayColumns
-  dt$WellIndex <- dt$Spot %/% nrArraySpots +1
+  dt$WellIndex <- (dt$Spot-1) %/% nrArraySpots +1
   dt$Spot <- ((dt$Spot-1) %% nrArraySpots)+1
   dt$Well <-  dt$WellIndex %>%
     sprintf("%02d",.) %>%
