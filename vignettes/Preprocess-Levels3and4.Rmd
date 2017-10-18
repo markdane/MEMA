@@ -48,7 +48,7 @@ We first read a file on Synpase that contains the study to plate barcode assignm
 
 ```{r getLevel2DataFromSynapse}
 studyName <- "HMEC240L_SS4"
-q <- sprintf("select id from syn7494072 WHERE Level='2' AND Study='%s'", studyName)
+q <- sprintf("select id from syn9612057 WHERE Level='2' AND Study='%s'", studyName)
 level2File <- synTableQuery(q)
 dataSynID <- level2File@values$id
 
