@@ -148,7 +148,13 @@ processan2omero <- function (fileName) {
 getOmeroIDs <- function(path){
   dt <- fread(path)[,list(WellName,Row,Column,ImageID)]
   #Extract well index and convert to alphanumeric label
-  dt[,WellIndex := as.integer(gsub(".*_Well","",WellName))]
+  if(grepl("nd2",dt$WellName[1])){
+    dt[,WellIndex := gsub(".*_Well","",WellName)]
+    dt[,WellIndex := gsub("_.*","",WellIndex)]
+    dt[,WellIndex := (match(str_extract(WellIndex,"[[:alpha:]]"),LETTERS)-1)*12+as.integer(str_extract(WellIndex,"[[:digit:]]+"))]
+  } else {
+    dt[,WellIndex := as.integer(gsub(".*_Well","",WellName))]
+  }
   setnames(dt,"Row","ArrayRow")
   setnames(dt,"Column","ArrayColumn")
   dt[,WellName := NULL]
