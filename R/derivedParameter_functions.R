@@ -90,7 +90,7 @@
 #http://stackoverflow.com/questions/23018056/convert-cartesian-angles-to-polar-compass-cardinal-angles-in-r
 calcTheta <- function(x,y) {
   z <- x + 1i * y
-  res <- 90 - Arg(z) / pi * 180
+  res <- Arg(z) / pi * 180
   res %% 360
 }
 
@@ -136,6 +136,7 @@ labelOuterCells <- function(x, thresh=.75){
 kmeansClusterValue <- function (x, centers = 2)
 {
   x <- data.frame(x)
+  x <- x[!is.na(x)]
   xkmeans <- kmeans(x, centers = centers)
   if(centers==2){
     if(xkmeans$centers[1] > xkmeans$centers[2]){
