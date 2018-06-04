@@ -299,7 +299,9 @@ boundedLogit <- function(x){
 #' @export
 compressHA <- function(x){
   x <- gsub("(hyaluronic_acid_greater_than_500kDa)","HA>500kDa",x)
+  x <- gsub("(HA_greater_than_950kDa)","HA>950kDa",x)
   x <- gsub("(hyaluronic_acid_less_than_500kDa)","HA<500kDa",x)
+  x <- gsub("(HA_less_than_40kDa)","HA<40kDa",x)
   x <- gsub("hyaluronicacid","HA",x)
   x <- gsub("lessthan","<",x)
   x <- gsub("greaterthan",">",x)
