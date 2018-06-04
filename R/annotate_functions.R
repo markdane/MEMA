@@ -83,28 +83,76 @@ processan2omero <- function (fileName) {
   #Process the file
   dt <- fread(fileName,header = TRUE)
   #Assign WellIndex values
+  setnames(dt, "iWell", "Well")
   setkey(dt, Well)
   wi <- data.table(Well = unique(dt$Well), WellIndex = 1:length(unique(dt$Well)))
   dt <- merge(dt,wi)
   #Rename to preprocessing pipeline variable names
-  setnames(dt,"PlateID","Barcode")
-  dt$EndpointDAPI <- dt[["395nm"]]
-  dt$Endpoint488 <- dt[["488nm"]]
-  dt$Endpoint555 <- dt[["555nm"]]
-  dt$Endpoint647 <- dt[["640nm"]]
-  dt$Endpoint750 <- dt[["750nm"]]
+  #setnames(dt,"runid","Barcode")
+  dt <- dt %>%
+    rename(Barcode=runid,
+           Cellline=`CellLine-1`,
+           ECM1=`Ecm-1`,
+           ECM2=`Ecm-2`,
+           ECM3=`Ecm-3`,
+           Ligand1=`Ligand-1`,
+           Drug1=`Drug-1`,
+           Drug1ConcUnit=`Drug-1-concUnit`,
+           Drug1Conc=`Drug-1-conc`,
+           Spot=iSpot) %>%
+    mutate(Barcode=str_remove(Barcode,"^mema-"))
+  
+  #Format stain endpoint metadata by parsing the primary and secondary antibody assignments
+  #Identify the stain numbers that are animals and therefore secondaries
+  stainRecSetNames <- unique(dt$`Stain-recordSetCollapsed`) %>%
+    str_split( fixed( " + ")) %>%
+    unlist() %>%
+    str_remove("_.*")
+  #Identify which stains are secondaries 
+  stainRecSetSecIndices <- stainRecSetNames %>%
+    str_which("Mouse|Rat|Donkey")
+  #Count how many stains are in the set
+  stainRecSetIndices <- 1:(str_count(unique(dt$`Stain-recordSetCollapsed`),fixed(" + ")) + 1)
+  #Identify the stains that are not secondaries
+  stainRecSetStains <- stainRecSetNames[-stainRecSetSecIndices]
+  stainRecSetStainIndices <- stainRecSetIndices[-stainRecSetSecIndices]
+  #make a one row dataframe with Endpointxxx columns that have the biomarkers as values
+  stainWavelength <- dt %>%
+    select(paste0("Stain-",stainRecSetStainIndices,"-wavelengthNm")) %>%
+    distinct() %>%
+    gather(value = "Endpoint") %>%
+    transmute(Stain=str_extract(key,"[[:digit:]]") %>%
+             as.numeric(),
+           Biomarker=stainRecSetNames[Stain],
+           Endpoint=Endpoint) %>%
+    select(-Stain) %>%
+    spread(key = Endpoint, value = Biomarker, sep="") %>%
+    rename(EndpointDAPI=Endpoint395)
+  
+  dt <- data.table(dt,stainWavelength)
+  
   #Shorten and combine Annot names
   dt$CellLine <- gsub("_.*","",dt$CellLine)
+  
+  #Reorder the ECMs so that if COL1 is present and paired, it's listed as ECM2  
+  swapECM1 <- str_which(dt$ECM2,"[^(COL1_go0005584)&^(COL4_go0005587)]")
+  ECM1Hold <- dt$ECM1[swapECM1]
+  dt$ECM1[swapECM1] <- dt$ECM2[swapECM1]
+  dt$ECM2[swapECM1] <-ECM1Hold
+  #Reorder the ECMs so that if NID1 is present and paired, it's listed as ECM1  
+  swapECM <- str_which(dt$ECM3,"[(NID1|1_P14543|1)]")
+  ECM1Hold <- dt$ECM1[swapECM]
+  dt$ECM1[swapECM] <- dt$ECM3[swapECM]
+  dt$ECM3[swapECM] <-ECM1Hold
+  
   dt$ECM1 <- compressHA(dt$ECM1)
   dt$ECM2 <- compressHA(dt$ECM2)
   dt$ECM3 <- compressHA(dt$ECM3)
-  #Chain ECM proteins if the second one is not COL1
+  
   dt$ECMp <-paste0(gsub("_.*","",dt$ECM1),"_",gsub("_.*","",dt$ECM2),"_",gsub("_.*","",dt$ECM3)) %>%
-    gsub("_NA","",.) %>%
-    gsub("_COL1|_$","",.)
+    str_remove("_$|__$")
   #Chain ligands
-  dt$Ligand <-paste0(gsub("_.*","",dt$Ligand1),"_",gsub("_.*","",dt$Ligand2)) %>%
-    gsub("_NA|_$","",.)
+  dt$Ligand <- str_remove(dt$Ligand1,"_.*")
   dt$MEP <- paste0(dt$ECMp,"_",dt$Ligand)
   dt$Drug <- gsub("_.*","",dt$Drug1)
   dt$MEP_Drug <-paste0(dt$MEP,"_",dt$Drug)
@@ -112,6 +160,14 @@ processan2omero <- function (fileName) {
   dt$Endpoint488 <-gsub("_.*","",dt$Endpoint488)
   dt$Endpoint555 <-gsub("_.*","",dt$Endpoint555)
   dt$Endpoint647 <-gsub("_.*","",dt$Endpoint647)
+  #Create ArrayRow and ArrayColumn variables
+  dt$ArrayRow <- dt$iixii %>%
+    str_remove("x.*") %>%
+    str_remove("._") %>%
+    as.integer()
+  dt$ArrayColumn <- dt$iixii %>%
+    str_remove(".*_") %>%
+    as.integer()
   #Add a WellSpace spot index that recognizes the arrays are rotated 180 degrees
   dt$PrintSpot <- dt$Spot
   nrArrayRows <- max(dt$ArrayRow)
