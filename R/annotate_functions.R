@@ -85,6 +85,15 @@ processan2omero <- function (fileName) {
   #Assign WellIndex values
   setnames(dt, "iWell", "Well")
   setkey(dt, Well)
+  wellRows <- dt$welllayout %>%
+    str_remove("x.*") %>%
+    unique() %>%
+    as.integer()
+  wellCols <- dt$welllayout %>%
+    str_remove(".*x") %>%
+    unique() %>%
+    as.integer()
+  dt$Well <- wellAN(wellRows,wellCols)[dt$Well]
   wi <- data.table(Well = unique(dt$Well), WellIndex = 1:length(unique(dt$Well)))
   dt <- merge(dt,wi)
   #Rename to preprocessing pipeline variable names
