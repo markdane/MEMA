@@ -82,6 +82,11 @@ numericMedian <- function(x) as.numeric(median(x, na.rm = TRUE))
 processan2omero <- function (fileName) {
   #Process the file
   dt <- fread(fileName,header = TRUE)
+  #Temp fix for repeated column
+  repeatedColumn <- colnames(dt) %>%
+str_which("Ecm-2-timeUnit")
+  if(length(repeatedColumn==2))  colnames(dt)[repeatedColumn[2]] <- "Ecm-3-timeUnit"
+  ########
   #Assign WellIndex values
   setnames(dt, "iWell", "Well")
   setkey(dt, Well)
