@@ -117,7 +117,7 @@ loessNormArray <- function(dt){
   signalName <- unique(dt$SignalName)
   setnames(dt,signalName,"Value")
   #Get the median of the replicates within the array
-  dt <- dt[,mel := median(Value), by=c("BW","ECMp","Drug")]
+  dt <- dt[,mel := median(Value), by=c("BW","ECMp")]
   #Get the residuals from the spot median
   dt <- dt[,Residual := Value-mel]
   #Subtract the loess model of each array's residuals from the signal
