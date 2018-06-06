@@ -61,7 +61,7 @@ normRUVLoessResiduals <- function(dt, k){
   #Remove NULL elements that were due to data that failed normalization
   srmRUVList <- srmRUVList[!sapply(srmRUVList,FUN = is.null)]
   #Reannotate with ECMp, Drug, ArrayRow and ArrayColumn as needed for loess normalization
-  ECMpDT <- unique(srDT[,list(Well,PrintSpot,Spot,ECMp,Drug, ArrayRow,ArrayColumn)])
+  ECMpDT <- unique(srDT[,list(Well,PrintSpot,Spot,ECMp, ArrayRow,ArrayColumn)])
   srmERUVList <- lapply(srmRUVList, function(dt,ECMpDT){
     dt$Well <- gsub(".*_","",dt$BW)
     setkey(dt,Well,PrintSpot)
