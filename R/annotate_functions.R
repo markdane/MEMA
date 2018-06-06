@@ -86,6 +86,8 @@ processan2omero <- function (fileName) {
   repeatedColumn <- colnames(dt) %>%
 str_which("Ecm-2-timeUnit")
   if(length(repeatedColumn==2))  colnames(dt)[repeatedColumn[2]] <- "Ecm-3-timeUnit"
+  #Temp fix for no ligand metadata
+  dt$`Ligand-1`[dt$`Ligand-1`==""] <- "PBS"
   ########
   #Assign WellIndex values
   setnames(dt, "iWell", "Well")
