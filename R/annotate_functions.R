@@ -126,7 +126,7 @@ str_which("Ecm-2-timeUnit")
     str_remove("_.*")
   #Identify which stains are secondaries 
   stainRecSetSecIndices <- stainRecSetNames %>%
-    str_which("Mouse|Rat|Donkey")
+    str_which("Mouse|Rat|Donkey|Rabbit")
   #Count how many stains are in the set
   stainRecSetIndices <- 1:(str_count(unique(dt$`Stain-recordSetCollapsed`),fixed(" + ")) + 1)
   #Identify the stains that are not secondaries
