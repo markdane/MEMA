@@ -107,7 +107,7 @@ str_which("Ecm-2-timeUnit")
   #setnames(dt,"runid","Barcode")
   dt <- dt %>%
     rename(Barcode=runid,
-           Cellline=`CellLine-1`,
+           CellLine=`CellLine-1`,
            ECM1=`Ecm-1`,
            ECM2=`Ecm-2`,
            ECM3=`Ecm-3`,
