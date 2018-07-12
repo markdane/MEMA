@@ -84,10 +84,9 @@ processan2omero <- function (fileName) {
   dt <- fread(fileName,header = TRUE)
   #Temp fix for repeated column
   repeatedColumn <- colnames(dt) %>%
-str_which("Ecm-2-timeUnit")
+    str_which("Ecm-2-timeUnit")
   if(length(repeatedColumn==2))  colnames(dt)[repeatedColumn[2]] <- "Ecm-3-timeUnit"
-  #Temp fix for no ligand metadata
-  dt$`Ligand-1`[dt$`Ligand-1`==""] <- "PBS"
+
   ########
   #Assign WellIndex values
   setnames(dt, "iWell", "Well")
@@ -103,6 +102,11 @@ str_which("Ecm-2-timeUnit")
   dt$Well <- wellAN(wellRows,wellCols)[dt$Well]
   wi <- data.table(Well = unique(dt$Well), WellIndex = 1:length(unique(dt$Well)))
   dt <- merge(dt,wi)
+  #add ligand and drug values if they are not included in the annotations
+  if(!"Ligand-1" %in% colnames(dt)) dt$`Ligand-1` <- "PBS_pubchemcid24978514"
+  if(!"Drug-1" %in% colnames(dt)) dt$`Drug-1` <- "None"
+  if(!"Drug-1-concUnit" %in% colnames(dt)) dt$`Drug-1-concUnit` <- "volume_percent_uo0000165"
+  if(!"Drug-1-conc" %in% colnames(dt)) dt$`Drug-1-conc` <- 0
   #Rename to preprocessing pipeline variable names
   #setnames(dt,"runid","Barcode")
   dt <- dt %>%
@@ -138,9 +142,9 @@ str_which("Ecm-2-timeUnit")
     distinct() %>%
     gather(value = "Endpoint") %>%
     transmute(Stain=str_extract(key,"[[:digit:]]") %>%
-             as.numeric(),
-           Biomarker=stainRecSetNames[Stain],
-           Endpoint=Endpoint) %>%
+                as.numeric(),
+              Biomarker=stainRecSetNames[Stain],
+              Endpoint=Endpoint) %>%
     select(-Stain) %>%
     spread(key = Endpoint, value = Biomarker, sep="") %>%
     rename(EndpointDAPI=Endpoint395)
