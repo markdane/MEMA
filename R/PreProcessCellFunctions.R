@@ -137,6 +137,7 @@ getMetadata <- function(metadataFiles, useAnnotMetadata=TRUE){
     } else {
       stop("Only 8 well and 96 well plates are supported")
     }
+    metadata$ECMp <- cleanExcelECMps(metadata$ECMp)
     #Add MEP and convenience labels for wells and ligands
     metadata <- metadata[,MEP:=paste(ECMp,Ligand,sep = "_")]
     metadata <- metadata[,Well_Ligand:=paste(Well,Ligand,sep = "_")]

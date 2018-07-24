@@ -214,7 +214,7 @@ processan2omero <- function (fileName) {
   return(dt)
 }
 
-#' Read in and merge the Omero URLs
+#' Read in and merge  Omero URLs
 #' 
 #' Adds Omero image IDs based on the WellName values
 #' 
@@ -235,4 +235,28 @@ getOmeroIDs <- function(path){
   setnames(dt,"Column","ArrayColumn")
   dt[,WellName := NULL]
   return(dt)
+}
+
+#' Remove details from ECM protein names
+#' 
+#' Remove all details after the first underscore. Highlight proteins that are paired with COL1
+#' by repositioning COL1 to be last.
+#' 
+#' @param x A chracter vector of ECM protein names
+#' @return The shortened character vector of the ECM protein names 
+#' @export
+cleanExcelECMps <- function(x){
+  MEMA::compressHA(x) %>%
+    str_split("[+]",3) %>%
+    lapply(function(ecmps){
+      ECMps <- str_remove(ecmps,"_.*")
+      ECMp <- ECMps
+      if(length(ECMps)==2){
+        ECMp <- paste0(ECMps[1],"_",ECMps[2])
+        if(str_which(ECMps,"(COL1)")==1) ECMp <- paste0(ECMps[2],"_",ECMps[1])
+      }
+      if(length(ECMps)==3) ECMp <- paste0(ECMps[3],"_",ECMps[2],"_",ECMps[1])
+      return(str_remove_all(ECMp," "))
+    })  %>%
+    unlist()
 }
