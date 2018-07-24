@@ -2,7 +2,7 @@
 % Please edit documentation in R/annotate_functions.R
 \name{getOmeroIDs}
 \alias{getOmeroIDs}
-\title{Read in and merge the Omero URLs}
+\title{Read in and merge  Omero URLs}
 \usage{
 getOmeroIDs(path)
 }
@@ -13,5 +13,5 @@ getOmeroIDs(path)
 a datatable with WellIndex, ArrayRow, ArrayColumn and ImageID columns
 }
 \description{
-Adds Omero image IDs based on the WelIndex values
+Adds Omero image IDs based on the WellName values
 }
