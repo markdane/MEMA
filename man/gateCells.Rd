@@ -4,7 +4,7 @@
 \alias{gateCells}
 \title{Gate cells based on specific stains if they are in the dataset}
 \usage{
-gateCells(dt)
+gateCells(dt, synId = "syn10138929")
 }
 \arguments{
 \item{dt}{A datatable that contains cell level data and metadata}
