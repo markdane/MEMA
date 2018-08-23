@@ -119,9 +119,10 @@ loessNormArray <- function(dt){
   #Get the median of the replicates within the array
   dt <- dt[,mel := median(Value), by=c("BW","ECMp")]
   #Get the residuals from the spot median
-  dt <- dt[,Residual := Value-mel]
+  #disable loess normalization
+  dt <- dt[,Residual := Value]
   #Subtract the loess model of each array's residuals from the signal
-  dt <- dt[, ValueLoess:= loessNorm(Value,Residual,ArrayRow,ArrayColumn), by="BW"]
+  dt <- dt[, ValueLoess:= Value]
   setnames(dt,"ValueLoess", paste0(signalName,"Loess"))
   BW <- "BW"
   PrintSpot <- "PrintSpot"

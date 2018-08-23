@@ -71,6 +71,7 @@ normRUVLoessResiduals <- function(dt, k){
   },ECMpDT=ECMpDT)
   
   #Add Loess normalized values for each RUV normalized signal
+  ####DEBUG SPECIAL PROCESSING comment out loess normalization
   RUVLoessList <- lapply(srmERUVList, function(dt){
     dtRUVLoess <- loessNormArray(dt)
   })
@@ -227,34 +228,34 @@ createRUVM <- function(dt,replicateCols=c("CellLine","Ligand","Drug"))
   return(M)
 }
 
-#' Loess normalize an array using the spatial residuals
-loessNorm <- function(Value,Residual,ArrayRow,ArrayColumn){
-  dt <-data.table(Value=Value,Residual=Residual,ArrayRow=ArrayRow,ArrayColumn=ArrayColumn)
-  lm <- loess(Residual~ArrayRow+ArrayColumn, dt, span=.7)
-  dt$ResidualLoess<-predict(lm)
-  dt <- dt[,ValueLoess := Value-ResidualLoess]
-  return(ValueLoess = dt$ValueLoess)
-}
+#' #' Loess normalize an array using the spatial residuals
+#' loessNorm <- function(Value,Residual,ArrayRow,ArrayColumn){
+#'   dt <-data.table(Value=Value,Residual=Residual,ArrayRow=ArrayRow,ArrayColumn=ArrayColumn)
+#'   lm <- loess(Residual~ArrayRow+ArrayColumn, dt, span=.7)
+#'   dt$ResidualLoess<-predict(lm)
+#'   dt <- dt[,ValueLoess := Value-ResidualLoess]
+#'   return(ValueLoess = dt$ValueLoess)
+#' }
 
-#' Loess normalize values within an array
-#'@export
-loessNormArray <- function(dt){
-  #Identify the Signal name
-  signalName <- unique(dt$SignalName)
-  setnames(dt,signalName,"Value")
-  #Get the median of the replicates within the array
-  dt <- dt[,mel := median(Value), by=c("BW","ECMp","Drug")]
-  #Get the residuals from the spot median
-  dt <- dt[,Residual := Value-mel]
-  #Subtract the loess model of each array's residuals from the signal
-  dt <- dt[, ValueLoess:= loessNorm(Value,Residual,ArrayRow,ArrayColumn), by="BW"]
-  setnames(dt,"ValueLoess", paste0(signalName,"Loess"))
-  BW <- "BW"
-  PrintSpot <- "PrintSpot"
-  dt <- dt[,c(paste0(signalName,"Loess"),BW,PrintSpot), with=FALSE]
-  setkey(dt,BW,PrintSpot)
-  return(dt)
-}
+#' #' Loess normalize values within an array
+#' #'@export
+#' loessNormArray <- function(dt){
+#'   #Identify the Signal name
+#'   signalName <- unique(dt$SignalName)
+#'   setnames(dt,signalName,"Value")
+#'   #Get the median of the replicates within the array
+#'   dt <- dt[,mel := median(Value), by=c("BW","ECMp","Drug")]
+#'   #Get the residuals from the spot median
+#'   dt <- dt[,Residual := Value-mel]
+#'   #Subtract the loess model of each array's residuals from the signal
+#'   dt <- dt[, ValueLoess:= loessNorm(Value,Residual,ArrayRow,ArrayColumn), by="BW"]
+#'   setnames(dt,"ValueLoess", paste0(signalName,"Loess"))
+#'   BW <- "BW"
+#'   PrintSpot <- "PrintSpot"
+#'   dt <- dt[,c(paste0(signalName,"Loess"),BW,PrintSpot), with=FALSE]
+#'   setkey(dt,BW,PrintSpot)
+#'   return(dt)
+#' }
 
 # #Create and test generating the RUV M matrix
 # #' Create an M matrix for the RUV normalization
