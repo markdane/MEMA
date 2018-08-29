@@ -121,7 +121,10 @@ loessNormArray <- function(dt){
   #Get the residuals from the spot median
   #disable loess normalization
   dt <- dt[,Residual := Value]
+  #re-enable loess
+  #dt <- dt[,Residual := Value - mel]
   #Subtract the loess model of each array's residuals from the signal
+  #dt <- dt[, ValueLoess:= loessNorm(Value, Residual, ArrayRow, ArrayColumn), by="BW"]
   dt <- dt[, ValueLoess:= Value]
   setnames(dt,"ValueLoess", paste0(signalName,"Loess"))
   BW <- "BW"
