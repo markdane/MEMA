@@ -3,7 +3,6 @@
 %   R/normalize_functions.R
 \name{loessNorm}
 \alias{loessNorm}
-\alias{loessNorm}
 \title{Loess normalize an array using the spatial residuals}
 \usage{
 loessNorm(Value, Residual, ArrayRow, ArrayColumn)

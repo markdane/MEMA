@@ -3,7 +3,6 @@
 %   R/normalize_functions.R
 \name{loessNormArray}
 \alias{loessNormArray}
-\alias{loessNormArray}
 \title{Loess normalize values within an array}
 \usage{
 loessNormArray(dt)
