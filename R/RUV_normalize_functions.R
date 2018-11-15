@@ -97,6 +97,97 @@ normRUVLoessResiduals <- function(dt, k){
   return(signalDT)
 }
 
+#'Apply RUV Normalization to the signals in a MEMA dataset
+#' @param dt A datatable with data and metadata to be normalzed. There must be CellLine, Barcode, Well, Ligand, Drug and ECMp metadata columns
+#' @param k  The number of factors to be removed in the RUV normalization
+#' @export
+normRUVResiduals <- function(dt, k){
+  setkey(dt,CellLine,Barcode,Well,Ligand,Drug,Drug1Conc,ECMp)
+  #Transform signals to be on additive scale
+  #log transform all intensity and areaShape values
+  log2Names <- grep("_Center_|_Eccentricity|_Orientation",grep("SpotCellCount|Intensity|AreaShape",colnames(dt), value=TRUE, ignore.case = TRUE), value=TRUE, invert=TRUE)
+  dtLog <- dt[,lapply(.SD,boundedLog2),.SDcols=log2Names]
+  setnames(dtLog,colnames(dtLog),paste0(colnames(dtLog),"Log2"))
+  #logit transform proportion values
+  logitNames <- grep("_Center_|_Orientation",grep("_Eccentricity|Proportion",colnames(dt), value=TRUE, ignore.case = TRUE), value=TRUE, invert=TRUE)
+  dtLogit <- dt[,lapply(.SD,boundedLogit),.SDcols=logitNames]
+  setnames(dtLogit,colnames(dtLogit),paste0(colnames(dtLogit),"Logit"))
+  signalNames <- c(colnames(dtLog),colnames(dtLogit))
+  dt <-  cbind(dt[,grep("^CellLine$|Barcode|^Well$|^Spot$|^PrintSpot$|ArrayRow|ArrayColumn|^ECMp$|^Ligand$|^Drug$|^Drug1Conc$",colnames(dt),value=TRUE),with=FALSE],dtLog,dtLogit)
+  #Add residuals from subtracting the biological medians from each value
+  residuals <- dt[,lapply(.SD,calcResidual), by="CellLine,Barcode,Well,Ligand,Drug,Drug1Conc,ECMp", .SDcols=signalNames]
+  #Add within array location metadata
+  residuals$Spot <- as.integer(dt$Spot)
+  residuals$PrintSpot <- as.integer(dt$PrintSpot)
+  residuals$ArrayRow <- dt$ArrayRow
+  residuals$ArrayColumn <- dt$ArrayColumn
+  #Create a signal type
+  dt$SignalType <- "Signal"
+  residuals$SignalType <- "Residual"
+  srDT <- rbind(dt,residuals)
+  
+  #Add to carry metadata into matrices
+  srDT$BWLDDc <- paste(srDT$Barcode, srDT$Well, srDT$Ligand,  srDT$Drug,  srDT$Drug1Conc, sep="_") 
+  
+  #Create the M matrix which denotes replicates
+  M <- createRUVM(srDT, replicateCols=c("CellLine","Ligand","Drug","Drug1Conc"))
+  
+  #Add BW 
+  srDT$BW <- paste(srDT$Barcode, srDT$Well, sep="_") 
+  #Make a list of matrices that hold signal and residual values
+  srmList <- lapply(signalNames, function(signalName, dt){
+    srm <- signalResidualMatrix(dt[,.SD, .SDcols=c("BW", "PrintSpot", "SignalType", signalName)])
+    return(srm)
+  },dt=srDT)
+  names(srmList) <- signalNames
+  
+  #Make a list of matrices of RUV normalized signal values
+  srmRUVList <- lapply(names(srmList), function(srmName, srmList, M, k){
+    Y <- srmList[[srmName]]
+    #Hardcode in identification of residuals as the controls
+    resStart <- ncol(Y)/2+1
+    cIdx=resStart:ncol(Y)
+    nY <- try(RUVArrayWithResiduals(k, Y, M, cIdx, srmName), silent = TRUE) #Normalize the spot level data
+    if(!is.data.table(nY)) return(NULL)
+    nY$SignalName <- paste0(srmName,"RUV")
+    setnames(nY,srmName,paste0(srmName,"RUV"))
+    #nY[[srmName]] <- as.vector(Y[,1:(resStart-1)]) #Add back in the raw signal (may not be needed)
+    return(nY)
+  }, srmList=srmList, M=M, k=k)
+  
+  #Remove NULL elements that were due to data that failed normalization
+  srmRUVList <- srmRUVList[!sapply(srmRUVList,FUN = is.null)]
+  #Reannotate with ECMp, Drug, ArrayRow and ArrayColumn as needed for loess normalization
+  ECMpDT <- unique(srDT[,list(Well,PrintSpot,Spot,ECMp, ArrayRow,ArrayColumn)])
+  srmNoLoessRUVList <- lapply(srmRUVList, function(dt){
+    dt <- dt[,SignalName:=NULL]
+    return(dt)
+  })
+  
+  
+  #Combine the normalized signals and metadata
+  signalDT <- Reduce(merge,srmNoLoessRUVList)
+  
+  #Backtransform from log2 and logit values
+  #log transform all intensity and areaShape values
+  log2Names <- grep("Log2",colnames(signalDT), value=TRUE)
+  btLog2 <- function(x){
+    x[x<0] <- 0
+    2^x
+  }
+  dtLog <- signalDT[,lapply(.SD,btLog2),.SDcols=log2Names]
+  logitNames <- grep("Logit",colnames(signalDT), value=TRUE)
+  dtLogit <- signalDT[,lapply(.SD,plogis),.SDcols=logitNames]
+  signalDT <- cbind(signalDT[,.(BW,PrintSpot)],dtLog,dtLogit)
+  #Label as Norm instead of RUVLoess
+  setnames(signalDT,
+           grep("Log2RUVLoess|LogitRUVLoess",colnames(signalDT),value=TRUE),
+           gsub("Log2RUVLoess|LogitRUVLoess","Norm", grep("Log2RUVLoess|LogitRUVLoess",colnames(signalDT),value=TRUE)))
+  
+  return(signalDT)
+}
+
+
 #' Calculate the residuals from the median of a vector of numeric values
 #' @export
 calcResidual <- function(x){
