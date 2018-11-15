@@ -181,8 +181,8 @@ normRUVResiduals <- function(dt, k){
   signalDT <- cbind(signalDT[,.(BW,PrintSpot)],dtLog,dtLogit)
   #Label as Norm instead of RUVLoess
   setnames(signalDT,
-           grep("Log2RUVLoess|LogitRUVLoess",colnames(signalDT),value=TRUE),
-           gsub("Log2RUVLoess|LogitRUVLoess","Norm", grep("Log2RUVLoess|LogitRUVLoess",colnames(signalDT),value=TRUE)))
+           grep("Log2RUVLoess|LogitRUVLoess|Log2RUV|LogitRUV",colnames(signalDT),value=TRUE),
+           gsub("Log2RUVLoess|LogitRUVLoess|Log2RUV|LogitRUV","Norm", grep("Log2RUVLoess|LogitRUVLoess|Log2RUV|LogitRUV",colnames(signalDT),value=TRUE)))
   
   return(signalDT)
 }
