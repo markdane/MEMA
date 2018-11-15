@@ -4,8 +4,9 @@
 \alias{create8WellHistograms}
 \title{Create histograms of 8 well MEMA data}
 \usage{
-create8WellHistograms(DT, pr, prDisplay, binwidth = diff(quantile(DT[[pr]],
-  probs = c(0, 0.98), na.rm = TRUE))/50, upperProb = 0.99, ncol = 4)
+create8WellHistograms(DT, pr, prDisplay,
+  binwidth = diff(quantile(DT[[pr]], probs = c(0, 0.98), na.rm =
+  TRUE))/50, upperProb = 0.99, ncol = 4)
 }
 \arguments{
 \item{DT}{A datatable with a pr column of values}
