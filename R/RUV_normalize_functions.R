@@ -105,15 +105,18 @@ normRUVResiduals <- function(dt, k){
   setkey(dt,CellLine,Barcode,Well,Ligand,Drug,Drug1Conc,ECMp)
   #Transform signals to be on additive scale
   #log transform all intensity and areaShape values
-  log2Names <- grep("_Center_|_Eccentricity|_Orientation",grep("SpotCellCount|Intensity|AreaShape",colnames(dt), value=TRUE, ignore.case = TRUE), value=TRUE, invert=TRUE)
+  log2Names <- grep("_Center_|_Eccentricity|_Orientation|_RR",grep("SpotCellCount|Intensity|AreaShape",colnames(dt), value=TRUE, ignore.case = TRUE), value=TRUE, invert=TRUE)
   dtLog <- dt[,lapply(.SD,boundedLog2),.SDcols=log2Names]
   setnames(dtLog,colnames(dtLog),paste0(colnames(dtLog),"Log2"))
   #logit transform proportion values
-  logitNames <- grep("_Center_|_Orientation",grep("_Eccentricity|Proportion",colnames(dt), value=TRUE, ignore.case = TRUE), value=TRUE, invert=TRUE)
+  logitNames <- grep("_Center_|_Orientation|_RR",grep("_Eccentricity|Proportion",colnames(dt), value=TRUE, ignore.case = TRUE), value=TRUE, invert=TRUE)
   dtLogit <- dt[,lapply(.SD,boundedLogit),.SDcols=logitNames]
   setnames(dtLogit,colnames(dtLogit),paste0(colnames(dtLogit),"Logit"))
-  signalNames <- c(colnames(dtLog),colnames(dtLogit))
-  dt <-  cbind(dt[,grep("^CellLine$|Barcode|^Well$|^Spot$|^PrintSpot$|ArrayRow|ArrayColumn|^ECMp$|^Ligand$|^Drug$|^Drug1Conc$",colnames(dt),value=TRUE),with=FALSE],dtLog,dtLogit)
+  #Get the RR feature names and a subset of the data.table
+  RRNames <- grep("_RR",colnames(dt),value=TRUE, ignore.case = TRUE)
+  dtRR <- dt[,..RRNames]
+  signalNames <- c(colnames(dtLog),colnames(dtLogit),colnames(dtRR))
+  dt <-  cbind(dt[,grep("^CellLine$|Barcode|^Well$|^Spot$|^PrintSpot$|ArrayRow|ArrayColumn|^ECMp$|^Ligand$|^Drug$|^Drug1Conc$",colnames(dt),value=TRUE),with=FALSE],dtLog,dtLogit, dtRR)
   #Add residuals from subtracting the biological medians from each value
   residuals <- dt[,lapply(.SD,calcResidual), by="CellLine,Barcode,Well,Ligand,Drug,Drug1Conc,ECMp", .SDcols=signalNames]
   #Add within array location metadata
@@ -200,6 +203,7 @@ calcResidual <- function(x){
 #' Assumes there are signal values in the first half of each row
 #' and residuals in the second half
 RUVArrayWithResiduals <- function(k, Y, M, cIdx, signalName, verboseDisplay=FALSE){
+  # Deal with NA values in Y
   YRUVIII <- RUVIII(Y, M, cIdx, k)
   nY <- YRUVIII[["newY"]]
   #Remove residuals
