@@ -113,10 +113,12 @@ normRUVResiduals <- function(dt, k){
   dtLogit <- dt[,lapply(.SD,boundedLogit),.SDcols=logitNames]
   setnames(dtLogit,colnames(dtLogit),paste0(colnames(dtLogit),"Logit"))
   #Get the RR feature names and a subset of the data.table
-  RRNames <- grep("_RR",colnames(dt),value=TRUE, ignore.case = TRUE)
-  dtRR <- dt[,..RRNames]
-  signalNames <- c(colnames(dtLog),colnames(dtLogit),colnames(dtRR))
-  dt <-  cbind(dt[,grep("^CellLine$|Barcode|^Well$|^Spot$|^PrintSpot$|ArrayRow|ArrayColumn|^ECMp$|^Ligand$|^Drug$|^Drug1Conc$",colnames(dt),value=TRUE),with=FALSE],dtLog,dtLogit, dtRR)
+  # RRNames <- grep("_RR",colnames(dt),value=TRUE, ignore.case = TRUE)
+  # dtRR <- dt[,..RRNames]
+  #signalNames <- c(colnames(dtLog),colnames(dtLogit),colnames(dtRR))
+  #dt <-  cbind(dt[,grep("^CellLine$|Barcode|^Well$|^Spot$|^PrintSpot$|ArrayRow|ArrayColumn|^ECMp$|^Ligand$|^Drug$|^Drug1Conc$",colnames(dt),value=TRUE),with=FALSE],dtLog,dtLogit, dtRR)
+  signalNames <- c(colnames(dtLog),colnames(dtLogit))
+  dt <-  cbind(dt[,grep("^CellLine$|Barcode|^Well$|^Spot$|^PrintSpot$|ArrayRow|ArrayColumn|^ECMp$|^Ligand$|^Drug$|^Drug1Conc$",colnames(dt),value=TRUE),with=FALSE],dtLog,dtLogit)
   #Add residuals from subtracting the biological medians from each value
   residuals <- dt[,lapply(.SD,calcResidual), by="CellLine,Barcode,Well,Ligand,Drug,Drug1Conc,ECMp", .SDcols=signalNames]
   #Add within array location metadata
@@ -181,9 +183,11 @@ normRUVResiduals <- function(dt, k){
   dtLog <- signalDT[,lapply(.SD,btLog2),.SDcols=log2Names]
   logitNames <- grep("Logit",colnames(signalDT), value=TRUE)
   dtLogit <- signalDT[,lapply(.SD,plogis),.SDcols=logitNames]
-  dtRR <- signalDT %>%
-    select(contains("_RR"))
-  signalDT <- cbind(signalDT[,.(BW,PrintSpot)],dtLog,dtLogit,dtRR)
+  # dtRR <- signalDT %>%
+    #select(contains("_RR"))
+  #signalDT <- cbind(signalDT[,.(BW,PrintSpot)],dtLog,dtLogit,dtRR)
+  signalDT <- cbind(signalDT[,.(BW,PrintSpot)],dtLog,dtLogit)
+
   #Label as Norm instead of RUVLoess
   setnames(signalDT,
            grep("Log2RUVLoess|LogitRUVLoess|Log2RUV|LogitRUV",colnames(signalDT),value=TRUE),
