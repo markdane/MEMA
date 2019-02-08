@@ -131,23 +131,39 @@ processan2omero <- function (fileName) {
   #Identify which stains are secondaries 
   stainRecSetSecIndices <- stainRecSetNames %>%
     str_which("Mouse|Rat|Donkey|Rabbit")
-  #Count how many stains are in the set
-  stainRecSetIndices <- 1:(str_count(unique(dt$`Stain-recordSetCollapsed`),fixed(" + ")) + 1)
-  #Identify the stains that are not secondaries
-  stainRecSetStains <- stainRecSetNames[-stainRecSetSecIndices]
-  stainRecSetStainIndices <- stainRecSetIndices[-stainRecSetSecIndices]
-  #make a one row dataframe with Endpointxxx columns that have the biomarkers as values
-  stainWavelength <- dt %>%
-    select(paste0("Stain-",stainRecSetStainIndices,"-wavelengthNm")) %>%
-    distinct() %>%
-    gather(value = "Endpoint") %>%
-    transmute(Stain=str_extract(key,"[[:digit:]]") %>%
-                as.numeric(),
-              Biomarker=stainRecSetNames[Stain],
-              Endpoint=Endpoint) %>%
-    select(-Stain) %>%
-    spread(key = Endpoint, value = Biomarker, sep="") %>%
-    rename(EndpointDAPI=Endpoint395)
+  #If there are no secondaries, create the Endpoint wavelength names 
+  #using different logic than if there are secondaries
+  if(!length(stainRecSetSecIndices)==0){
+    #Count how many stains are in the set
+    stainRecSetIndices <- 1:(str_count(unique(dt$`Stain-recordSetCollapsed`),fixed(" + ")) + 1)
+    #Identify the stains that are not secondaries
+    stainRecSetStains <- stainRecSetNames[-stainRecSetSecIndices]
+    stainRecSetStainIndices <- stainRecSetIndices[-stainRecSetSecIndices]
+    #make a one row dataframe with Endpointxxx columns that have the biomarkers as values
+    stainWavelength <- dt %>%
+      select(paste0("Stain-",stainRecSetStainIndices,"-wavelengthNm")) %>%
+      distinct() %>%
+      gather(value = "Endpoint") %>%
+      transmute(Stain=str_extract(key,"[[:digit:]]") %>%
+                  as.numeric(),
+                Biomarker=stainRecSetNames[Stain],
+                Endpoint=Endpoint) %>%
+      select(-Stain) %>%
+      spread(key = Endpoint, value = Biomarker, sep="") %>%
+      rename(EndpointDAPI=Endpoint395)
+  } else {
+    stainWavelength <- dt %>%
+      select(paste0("Stain-",stainRecSetIndices,"-wavelengthNm")) %>%
+      distinct() %>%
+      gather(value = "Endpoint") %>%
+      transmute(Stain=str_extract(key,"[[:digit:]]") %>%
+                  as.numeric(),
+                Biomarker=stainRecSetNames[Stain],
+                Endpoint=Endpoint) %>%
+      select(-Stain) %>%
+      spread(key = Endpoint, value = Biomarker, sep="") %>%
+      rename(EndpointDAPI=Endpoint395)
+  }
   
   dt <- data.table(dt,stainWavelength)
   
