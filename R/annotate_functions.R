@@ -131,11 +131,12 @@ processan2omero <- function (fileName) {
   #Identify which stains are secondaries 
   stainRecSetSecIndices <- stainRecSetNames %>%
     str_which("Mouse|Rat|Donkey|Rabbit")
+  #Count how many stains are in the set
+  stainRecSetIndices <- 1:(str_count(unique(dt$`Stain-recordSetCollapsed`),fixed(" + ")) + 1)
   #If there are no secondaries, create the Endpoint wavelength names 
   #using different logic than if there are secondaries
   if(!length(stainRecSetSecIndices)==0){
-    #Count how many stains are in the set
-    stainRecSetIndices <- 1:(str_count(unique(dt$`Stain-recordSetCollapsed`),fixed(" + ")) + 1)
+
     #Identify the stains that are not secondaries
     stainRecSetStains <- stainRecSetNames[-stainRecSetSecIndices]
     stainRecSetStainIndices <- stainRecSetIndices[-stainRecSetSecIndices]
