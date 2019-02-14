@@ -13,7 +13,7 @@ normRUVLoessResiduals <- function(dt, k){
   setnames(dtLog,colnames(dtLog),paste0(colnames(dtLog),"Log2"))
   #logit transform proportion values
   logitNames <- grep("_Center_|_Orientation",grep("_Eccentricity|Proportion",colnames(dt), value=TRUE, ignore.case = TRUE), value=TRUE, invert=TRUE)
-  dtLogit <- dt[,lapply(.SD,boundedLogit),.SDcols=logitNames]
+  dtLogit <- dt[,lapply(.SD,MEMA:::boundedLogit),.SDcols=logitNames]
   setnames(dtLogit,colnames(dtLogit),paste0(colnames(dtLogit),"Logit"))
   signalNames <- c(colnames(dtLog),colnames(dtLogit))
   dt <-  cbind(dt[,grep("^CellLine$|Barcode|^Well$|^Spot$|^PrintSpot$|ArrayRow|ArrayColumn|^ECMp$|^Ligand$|^Drug$|^Drug1Conc$",colnames(dt),value=TRUE),with=FALSE],dtLog,dtLogit)
@@ -105,12 +105,12 @@ normRUVResiduals <- function(dt, k){
   setkey(dt,CellLine,Barcode,Well,Ligand,Drug,Drug1Conc,ECMp)
   #Transform signals to be on additive scale
   #log transform all intensity and areaShape values
-  log2Names <- grep("_Center_|_Eccentricity|_Orientation|_RR",grep("SpotCellCount|Intensity|AreaShape",colnames(dt), value=TRUE, ignore.case = TRUE), value=TRUE, invert=TRUE)
+  log2Names <- grep("_Center_|_Eccentricity|_Orientation|_RR",grep("SpotCellCount|Intensity|AreaShape|surface",colnames(dt), value=TRUE, ignore.case = TRUE), value=TRUE, invert=TRUE)
   dtLog <- dt[,lapply(.SD,boundedLog2),.SDcols=log2Names]
   setnames(dtLog,colnames(dtLog),paste0(colnames(dtLog),"Log2"))
   #logit transform proportion values
   logitNames <- grep("_Center_|_Orientation|_RR",grep("_Eccentricity|Proportion",colnames(dt), value=TRUE, ignore.case = TRUE), value=TRUE, invert=TRUE)
-  dtLogit <- dt[,lapply(.SD,boundedLogit),.SDcols=logitNames]
+  dtLogit <- dt[,lapply(.SD,MEMA:::boundedLogit),.SDcols=logitNames]
   setnames(dtLogit,colnames(dtLogit),paste0(colnames(dtLogit),"Logit"))
   #Get the RR feature names and a subset of the data.table
   # RRNames <- grep("_RR",colnames(dt),value=TRUE, ignore.case = TRUE)
@@ -280,7 +280,7 @@ RUVIII = function(Y, M, ctl, k=NULL, eta=NULL, average=FALSE, fullalpha=NULL)
   else
   {
     m = nrow(Y)
-    Y0 = residop(Y,M)
+    Y0 = ruv::residop(Y,M)
     fullalpha = t(svd(Y0%*%t(Y0))$u[,1:(m-ncol(M)),drop=FALSE])%*%Y
     k<-min(k,nrow(fullalpha))
     alpha = fullalpha[1:k,,drop=FALSE]
