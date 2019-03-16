@@ -109,17 +109,28 @@ processan2omero <- function (fileName) {
   if(!"Drug-1-conc" %in% colnames(dt)) dt$`Drug-1-conc` <- 0
   #Rename to preprocessing pipeline variable names
   #setnames(dt,"runid","Barcode")
+  if("runid" %in% colnames(dt)) setnames(dt, "runid", "Barcode")
+  if("CellLine-1" %in% colnames(dt)) setnames(dt, "CellLine-1", "CellLine")
+  if("Ecm-1" %in% colnames(dt)) setnames(dt,"Ecm-1", "ECM1")
+  if("Ecm-2" %in% colnames(dt)) setnames(dt,"Ecm-2", "ECM2")
+  if("Ecm-3" %in% colnames(dt)) setnames(dt,"Ecm-3", "ECM3")
+  if("Ligand-1" %in% colnames(dt)) setnames(dt,"Ligand-1", "Ligand1")
+  if("Drug-1" %in% colnames(dt)) setnames(dt,"Drug-1","Drug1")
+  if("Drug-1-concUnit" %in% colnames(dt)) setnames(dt,"Drug-1-concUnit", "Drug1ConcUnit")
+  if("Drug-1-conc" %in% colnames(dt)) setnames(dt,"Drug-1-conc" , "Drug1Conc")
+  if("iSpot" %in% colnames(dt)) setnames(dt,"iSpot", "Spot")
+  
   dt <- dt %>%
-    rename(Barcode=runid,
-           CellLine=`CellLine-1`,
-           ECM1=`Ecm-1`,
-           ECM2=`Ecm-2`,
-           ECM3=`Ecm-3`,
-           Ligand1=`Ligand-1`,
-           Drug1=`Drug-1`,
-           Drug1ConcUnit=`Drug-1-concUnit`,
-           Drug1Conc=`Drug-1-conc`,
-           Spot=iSpot) %>%
+    # rename(Barcode=runid,
+    #        CellLine=`CellLine-1`,
+    #        ECM1=`Ecm-1`,
+    #        ECM2=`Ecm-2`,
+    #        ECM3=`Ecm-3`,
+    #        Ligand1=`Ligand-1`,
+    #        Drug1=`Drug-1`,
+    #        Drug1ConcUnit=`Drug-1-concUnit`,
+    #        Drug1Conc=`Drug-1-conc`,
+    #        Spot=iSpot) %>%
     mutate(Barcode=str_remove(Barcode,"^mema-"))
   
   #Format stain endpoint metadata by parsing the primary and secondary antibody assignments
